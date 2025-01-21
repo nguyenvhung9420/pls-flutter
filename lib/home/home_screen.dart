@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pls_flutter/data/models/seminr_summary.dart';
 import 'package:pls_flutter/home/task_chooser_screen.dart';
 import 'package:pls_flutter/repositories/authentication/auth_repository.dart';
 import 'package:pls_flutter/repositories/authentication/token_repository.dart';
@@ -50,9 +51,9 @@ class _MyHomePageState extends State<MyHomePage> {
 
   void _addSummaryPaths() async {
     if (accessToken == null) return;
-
-    List<String> summaryPaths =
-        await PLSRepository().getSummaryPaths(userToken: accessToken!) ?? [];
+    SeminrSummary? summary =
+        await PLSRepository().getSummaryPaths(userToken: accessToken!);
+    List<String> summaryPaths = summary?.paths ?? [];
     String theWholeString = summaryPaths.join("\n");
     setState(() {
       sampleDataList

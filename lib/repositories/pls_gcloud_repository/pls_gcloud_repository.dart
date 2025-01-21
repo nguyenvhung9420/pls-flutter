@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:pls_flutter/data/models/seminr_summary.dart';
 import 'package:pls_flutter/services/api_domain_url.dart';
 import 'package:pls_flutter/services/api_service.dart';
 
@@ -9,17 +10,14 @@ class PLSRepository {
 
   APIService apiService = APIService(baseUrl: APIDomain.apiDomainUrl);
 
-  Future<List<String>?> getSummaryPaths({required String userToken}) async {
-    List<String> finalResponse = [];
+  Future<SeminrSummary?> getSummaryPaths({required String userToken}) async {
+    SeminrSummary? finalResponse;
     try {
       final response = await apiService
           .get(queryParams: {'manual_token': userToken}, url: summaryPathsPath);
 
       Map<String, dynamic> toReturn = jsonDecode(response.toString());
-      finalResponse =
-          (toReturn['response'] as List<dynamic>).map((dynamic each) {
-        return each.toString();
-      }).toList();
+      finalResponse = SeminrSummary.fromJson(toReturn);
 
       return finalResponse;
     } catch (e) {
