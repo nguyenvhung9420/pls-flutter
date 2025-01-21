@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:pls_flutter/home/task_chooser_screen.dart';
+import 'package:pls_flutter/repositories/authentication/auth_repository.dart';
+import 'package:pls_flutter/repositories/authentication/token_repository.dart';
+import 'package:pls_flutter/repositories/pls_gcloud_repository/pls_gcloud_repository.dart';
 import 'package:pls_flutter/utils.dart';
 
 class MyHomePage extends StatefulWidget {
@@ -18,6 +21,8 @@ class SampleData {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  String? accessToken;
+
   final List<SampleData> sampleDataList = [
     SampleData(name: 'Item 1', description: 'Description for Item 1'),
     SampleData(name: 'Item 2', description: 'Description for Item 2'),
@@ -26,20 +31,46 @@ class _MyHomePageState extends State<MyHomePage> {
     SampleData(name: 'Item 5', description: 'Description for Item 5'),
   ];
 
+  void _login() async {
+    accessToken = await AuthTokenRepository().getCurrentAuthToken();
+
+    if (accessToken?.isEmpty == false) {
+      setState(() => accessToken = accessToken);
+      return;
+    }
+
+    accessToken = await AuthRepository().login(
+        loginBody: {"username": "hungnguyen_pls_sem", "password": "secret"});
+
+    if (accessToken != null) {
+      await AuthTokenRepository().saveAuthToken(token: accessToken!);
+      setState(() => accessToken = accessToken);
+    }
+  }
+
+  void _addSummaryPaths() async {
+    if (accessToken == null) return;
+
+    List<String> summaryPaths =
+        await PLSRepository().getSummaryPaths(userToken: accessToken!) ?? [];
+    String theWholeString = summaryPaths.join("\n");
+    setState(() {
+      sampleDataList
+          .add(SampleData(name: theWholeString, description: "Summary Path"));
+    });
+  }
+
   void _incrementCounter() {
     String currentTime = Utils.getCurrentTimeString();
-    sampleDataList.add(SampleData(name: currentTime, description: "Task required"));
+    sampleDataList
+        .add(SampleData(name: currentTime, description: "Task required"));
 
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => TaskChooserScreen(
           onTaskSelected: (taskSelected) {
-            String currentTime = Utils.getCurrentTimeString();
-            setState(() {
-              sampleDataList
-                  .add(SampleData(name: '$currentTime: Item ${sampleDataList.length + 1}', description: taskSelected));
-            });
+            _addSummaryPaths();
           },
         ),
       ),
@@ -49,6 +80,8 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
     super.initState();
+
+    _login();
   }
 
   @override
