@@ -37,6 +37,7 @@ dependencies:
   google_fonts: ^6.2.1
   dio: ^5.7.0
   shared_preferences: ^2.3.5
+  device_type: ^0.0.6
 
 dev_dependencies:
   flutter_test:
