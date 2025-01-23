@@ -86,6 +86,56 @@ class APIService {
     return responseJson;
   }
 
+  Future<dynamic> postWithFile({
+    required String urlPath,
+    required Map<String, dynamic> requestBody,
+    required String filePath,
+    required String fileName,
+    Map<String, String> headers = const {},
+    Map<String, dynamic> queryParams = const {},
+  }) async {
+    dynamic responseJson;
+    Response<String>? response;
+    Map<String, String> finalHeaders = {};
+    // finalHeaders.addAll(<String, String>{'Content-Type': 'application/json', "accept": 'application/json'});
+    finalHeaders.addAll(<String, String>{'Content-Type': 'multipart/form-data', 'accept': '*/*'});
+    finalHeaders.addAll(<String, String>{'Access-Control-Allow-Origin': '*'});
+    finalHeaders.addAll(headers);
+
+    debugPrint(">>> _baseUrl + url = ${_baseUrl + urlPath}");
+    debugPrint(">>> file path = $filePath");
+
+    try {
+      FormData formData = FormData.fromMap({
+        'file': await MultipartFile.fromFile(
+          filePath,
+          filename: fileName,
+          contentType: DioMediaType('text', 'csv'),
+        ),
+        'name': 'Hung 23332',
+      });
+
+      response = await dio.post(
+        _baseUrl + urlPath,
+        data: formData,
+        queryParameters: queryParams,
+        options: Options(headers: finalHeaders),
+      );
+      debugPrint(">>> Dio response.data = ${response.data}");
+    } on SocketException {
+      throw FetchDataException('No Internet connection');
+    } catch (e) {
+      if (e is DioError) {
+        debugPrint(">>> Error: ${e.response?.data.toString()}");
+        throw FetchDataException(getExceptionMessageFromJsonString(e.response?.data.toString() ?? ""));
+      }
+      throw FetchDataException(e.toString());
+    }
+
+    responseJson = _response(response);
+    return responseJson;
+  }
+
   Future<dynamic> delete(
       {String url = "", Map<String, dynamic> queryParams = const {}, Map<String, String> headers = const {}}) async {
     dynamic responseJson;

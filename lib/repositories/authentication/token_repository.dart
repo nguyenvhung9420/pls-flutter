@@ -3,6 +3,25 @@ import 'package:pls_flutter/services/api_domain_url.dart';
 import 'package:pls_flutter/services/api_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+class FilePathRepository {
+  String filePathKey = "FILE_PATH";
+
+  Future<String?> getFilePath() async {
+    SharedPreferences preferences = await SharedPreferences.getInstance();
+    return preferences.getString(filePathKey);
+  }
+
+  Future<bool> saveFilePath({required String filePath}) async {
+    SharedPreferences preferences = await SharedPreferences.getInstance();
+    return await preferences.setString(filePathKey, filePath);
+  }
+
+  Future<bool> removeFilePath() async {
+    SharedPreferences preferences = await SharedPreferences.getInstance();
+    return await preferences.remove(filePathKey);
+  }
+}
+
 class AuthTokenRepository {
   String sharedPreferenceTokenKey = "TOKEN";
 
@@ -14,12 +33,9 @@ class AuthTokenRepository {
   }
 
   /// saving token to sharedpreference
-  void saveAuthTokenWithCallback(
-      {required String token, required Function callback}) async {
+  void saveAuthTokenWithCallback({required String token, required Function callback}) async {
     SharedPreferences preferences = await SharedPreferences.getInstance();
-    preferences
-        .setString(sharedPreferenceTokenKey, token)
-        .then((value) => callback());
+    preferences.setString(sharedPreferenceTokenKey, token).then((value) => callback());
   }
 
   Future<String?> getCurrentAuthToken() async {

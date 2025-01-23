@@ -13,8 +13,61 @@ class PLSRepository {
   final String indicatorWeightsSignificancePath = "/indicator_weights_significance";
   final String comparePredictModels = "/compare_predict_models";
   final String analyzeModeration = "/analyze_moderation";
+  final String testFileUpload = "/upload";
 
   APIService apiService = APIService(baseUrl: APIDomain.apiDomainUrl);
+
+  Future<SeminrSummary?> uploadFile({required String userToken, required String filePath}) async {
+    SeminrSummary? finalResponse;
+    try {
+      final response = await apiService.postWithFile(
+        urlPath: testFileUpload,
+        filePath: filePath,
+        queryParams: {'manual_token': userToken},
+        requestBody: {},
+        fileName: 'Corporate_reputation_data.csv',
+      );
+
+      Map<String, dynamic> toReturn = jsonDecode(response.toString());
+      finalResponse = SeminrSummary.fromJson(toReturn);
+
+      return finalResponse;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  // import 'package:dio/dio.dart';
+
+  // Future<void> uploadFileWithDio({required String filePath, required String userName}) async {
+  //   try {
+  //     Dio dio = Dio();
+  //     FormData formData = FormData.fromMap({
+  //       'file': await MultipartFile.fromFile(filePath, filename: 'Corporate reputation data.csv',
+  // contentType: MediaType('text', 'csv')),
+  //     });
+
+  //     Response response = await dio.post(
+  //       'http://127.0.0.1:5555/upload',
+  //       queryParameters: {'name': userName},
+  //       data: formData,
+  //       options: Options(
+  //         headers: {
+  //           'accept': '*/*',
+  //           'Content-Type': 'multipart/form-data',
+  //         },
+  //       ),
+  //     );
+
+  //     if (response.statusCode != 200) {
+  //       throw Exception('Failed to upload file');
+  //     }
+
+  //     print('File uploaded successfully');
+  //   } catch (e) {
+  //     print('Error uploading file: $e');
+  //   }
+  // }
 
   Future<SeminrSummary?> getSummaryPaths({required String userToken}) async {
     SeminrSummary? finalResponse;

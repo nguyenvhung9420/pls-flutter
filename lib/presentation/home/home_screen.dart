@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:pls_flutter/data/models/boostrap_summary.dart';
 import 'package:pls_flutter/data/models/predict_models_comparison.dart';
 import 'package:pls_flutter/data/models/seminr_summary.dart';
-import 'package:pls_flutter/home/task_chooser_screen.dart';
+import 'package:pls_flutter/presentation/file_chooser/file_chooser_screen.dart';
+import 'package:pls_flutter/presentation/home/task_chooser_screen.dart';
 import 'package:pls_flutter/presentation/base_state/base_state.dart';
 import 'package:pls_flutter/presentation/models/pls_task_view.dart';
 import 'package:pls_flutter/repositories/authentication/auth_repository.dart';
@@ -442,6 +443,14 @@ class _MyHomePageState extends BaseState<MyHomePage> {
     return DeviceType.getDeviceType(context);
   }
 
+  void _uploadFile(String filePath) async {
+    enableLoading();
+    if (accessToken == null) return;
+    SeminrSummary? summary = await PLSRepository().uploadFile(userToken: accessToken!, filePath: filePath);
+    setState(() => seminrSummary = summary);
+    disableLoading();
+  }
+
   @override
   Widget build(BuildContext context) {
     String deviceType = _getDeviceType(context);
@@ -461,7 +470,19 @@ class _MyHomePageState extends BaseState<MyHomePage> {
                 child: Column(
                   mainAxisSize: MainAxisSize.max,
                   children: [
-                    TextButton(onPressed: () {}, child: Text("Add/Update Dataset")),
+                    TextButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => FileChooserScreen(
+                                      onDoneWithChoosingFile: (String filePath) {
+                                        _uploadFile(filePath);
+                                      },
+                                    )),
+                          );
+                        },
+                        child: Text("Add/Update Dataset")),
                     Expanded(
                       child: ListView.builder(
                         itemCount: taskGroups.length,
