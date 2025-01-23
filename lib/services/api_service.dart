@@ -7,9 +7,9 @@ import 'package:pls_flutter/data/exceptions/base_error.dart';
 
 class APIService {
   var dio = Dio(BaseOptions(
-    sendTimeout: const Duration(seconds: 5),
-    connectTimeout: const Duration(seconds: 5),
-    receiveTimeout: const Duration(seconds: 5),
+    sendTimeout: const Duration(seconds: 20),
+    connectTimeout: const Duration(seconds: 20),
+    receiveTimeout: const Duration(seconds: 20),
   ));
   final apiKey = "";
   String _baseUrl = "";

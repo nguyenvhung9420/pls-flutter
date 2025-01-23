@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:pls_flutter/home/home_screen.dart';
+import 'package:pls_flutter/presentation/models/pls_task_view.dart';
 
 class TaskChooserScreen extends StatefulWidget {
   final Function(String taskSelected) onTaskSelected;
