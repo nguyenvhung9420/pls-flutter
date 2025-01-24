@@ -7,47 +7,17 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:csv/csv.dart';
+import 'package:pls_flutter/presentation/models/model_setups.dart';
 import 'package:pls_flutter/repositories/authentication/token_repository.dart';
 import 'package:pls_flutter/utils/theme_constant.dart';
 
 class FileChooserScreen extends StatefulWidget {
-  final Function(String) onDoneWithChoosingFile;
-  const FileChooserScreen({super.key, required this.onDoneWithChoosingFile});
+  final Function(ConfiguredModel) onDoneWithModelSetup;
+  final ConfiguredModel? configuredModel;
+  const FileChooserScreen({super.key, required this.onDoneWithModelSetup, required this.configuredModel});
 
   @override
   State<FileChooserScreen> createState() => _FileChooserScreenState();
-}
-
-class MultiItem {
-  String prefix;
-  int from;
-  int to;
-  MultiItem({required this.prefix, required this.from, required this.to});
-}
-
-class Composite {
-  // # pls_model:
-  // # - constructs -> composites:
-  // #     - name
-  // #     - multi_items( prefix, from, to )
-  // #     - single_item( name )
-  // # - relationships:
-  // #     - [ paths( from [ ] , to [ ] ) ]
-  // # - inner_weights
-  // # - missing
-  // # - missing_value
-
-  String? name;
-  String? weight;
-  String? singleItem;
-  MultiItem? multiItem;
-  bool isMulti;
-  Composite(
-      {required this.name,
-      required this.weight,
-      required this.singleItem,
-      required this.multiItem,
-      required this.isMulti});
 }
 
 class _FileChooserScreenState extends BaseState<FileChooserScreen> {
@@ -56,11 +26,32 @@ class _FileChooserScreenState extends BaseState<FileChooserScreen> {
 
   String? _fieldDelimiter;
 
+  @override
+  void initState() {
+    super.initState();
+    _populateData();
+  }
+
+  void _populateData() async {
+    if (widget.configuredModel != null) {
+      _fieldDelimiter = widget.configuredModel!.delimiter;
+      filePath = widget.configuredModel!.filePath;
+      composites = widget.configuredModel!.composites;
+      paths = widget.configuredModel!.paths;
+
+      await _processFile(filePath);
+    }
+  }
+
   void _pickFile() async {
     if (_fieldDelimiter == null) return;
     final result = await FilePicker.platform.pickFiles(allowMultiple: false);
     if (result == null) return;
     filePath = result.files.single.path!;
+    await _processFile(filePath);
+  }
+
+  Future<void> _processFile(String? filePath) async {
     final input = File(filePath!).openRead();
     final List<String> fields = await input.transform(utf8.decoder).transform(LineSplitter()).toList();
 
@@ -101,7 +92,13 @@ class _FileChooserScreenState extends BaseState<FileChooserScreen> {
   }
 
   List<Composite> composites = [];
+  List<RelationshipPath> paths = [];
   int? compositeIndexInEditing;
+  int? pathIndexInEditing;
+
+  List<String> possibleCompositeNames() {
+    return composites.map((Composite e) => e.name ?? "").where((String element) => element.isNotEmpty).toList();
+  }
 
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _prefixController = TextEditingController();
@@ -116,7 +113,17 @@ class _FileChooserScreenState extends BaseState<FileChooserScreen> {
         title: const Text("CSV Data Import"),
         actions: [
           TextButton(
-              onPressed: (filePath ?? "").isEmpty ? null : () => widget.onDoneWithChoosingFile(filePath!),
+              onPressed: (filePath ?? "").isEmpty
+                  ? null
+                  : () {
+                      widget.onDoneWithModelSetup(ConfiguredModel(
+                        composites: composites,
+                        paths: paths,
+                        delimiter: _fieldDelimiter!,
+                        filePath: filePath!,
+                      ));
+                      Navigator.of(context).pop();
+                    },
               child: Text("Done"))
         ],
       ),
@@ -171,15 +178,17 @@ class _FileChooserScreenState extends BaseState<FileChooserScreen> {
                         ),
                 ),
                 Row(children: [
-                  Text("Construct constructions"),
+                  Text("Measurement model"),
                   TextButton(
                       onPressed: () {
                         composites.add(Composite(
-                            name: "construction",
-                            weight: "1",
+                            name: "[No Name]",
+                            weight: null,
                             singleItem: null,
                             multiItem: MultiItem(prefix: "construction", from: 1, to: 1),
                             isMulti: true));
+                        compositeIndexInEditing = composites.length - 1;
+                        pathIndexInEditing = null;
                         setState(() {});
                       },
                       child: Text("Add Construct")),
@@ -189,41 +198,95 @@ class _FileChooserScreenState extends BaseState<FileChooserScreen> {
                   primary: false,
                   itemCount: composites.length,
                   itemBuilder: (BuildContext context, int index) {
-                    return Card(
-                      shape: RoundedRectangleBorder(
-                        side: BorderSide(
-                          color: compositeIndexInEditing == index ? Theme.of(context).primaryColor : Colors.transparent,
-                          width: 2,
+                    return InkWell(
+                      onTap: () {
+                        setState(() {
+                          pathIndexInEditing = null;
+                          compositeIndexInEditing = index;
+                        });
+                        _nameController.text = composites[index].name ?? "";
+                        if (composites[index].isMulti) {
+                          _prefixController.text = composites[index].multiItem?.prefix ?? "";
+                          _fromController.text = composites[index].multiItem?.from.toString() ?? "";
+                          _toController.text = composites[index].multiItem?.to.toString() ?? "";
+                        } else {
+                          _singleItemController.text = composites[index].singleItem ?? "";
+                        }
+                      },
+                      child: Card(
+                        shape: RoundedRectangleBorder(
+                          side: BorderSide(
+                            color:
+                                compositeIndexInEditing == index ? Theme.of(context).primaryColor : Colors.transparent,
+                            width: 2,
+                          ),
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        borderRadius: BorderRadius.circular(12),
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Row(
+                            children: [
+                              // composite("COMP", multi_items("comp_", 1:3)),
+                              // composite("CUSA", single_item("cusa")),
+                              Builder(builder: (context) {
+                                String finalString = makeCompositeCommandString(index);
+                                return Text(finalString);
+                              }),
+                              Spacer(),
+                              Icon(Icons.edit),
+                            ],
+                          ),
+                        ),
                       ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Row(
-                          children: [
-                            // composite("COMP", multi_items("comp_", 1:3)),
-                            // composite("CUSA", single_item("cusa")),
-                            Builder(builder: (context) {
-                              String finalString = makeCompositeCommandString(index);
-                              return Text(finalString);
-                            }),
-                            IconButton(
-                              icon: Icon(Icons.edit),
-                              onPressed: () {
-                                setState(() {
-                                  compositeIndexInEditing = index;
-                                });
-                                _nameController.text = composites[index].name ?? "";
-                                if (composites[index].isMulti) {
-                                  _prefixController.text = composites[index].multiItem?.prefix ?? "";
-                                  _fromController.text = composites[index].multiItem?.from.toString() ?? "";
-                                  _toController.text = composites[index].multiItem?.to.toString() ?? "";
-                                } else {
-                                  _singleItemController.text = composites[index].singleItem ?? "";
-                                }
-                              },
-                            ),
-                          ],
+                    );
+                  },
+                ),
+                Row(children: [
+                  Text("Structural model"),
+                  TextButton(
+                      onPressed: () {
+                        paths.add(RelationshipPath(from: [], to: []));
+                        pathIndexInEditing = paths.length - 1;
+                        compositeIndexInEditing = null;
+                        setState(() {});
+                      },
+                      child: Text("Add Relationships (Paths)")),
+                ]),
+                ListView.builder(
+                  shrinkWrap: true,
+                  primary: false,
+                  itemCount: paths.length,
+                  itemBuilder: (BuildContext context, int index) {
+                    return InkWell(
+                      onTap: () {
+                        setState(() {
+                          pathIndexInEditing = index;
+                          compositeIndexInEditing = null;
+                        });
+                      },
+                      child: Card(
+                        shape: RoundedRectangleBorder(
+                          side: BorderSide(
+                            color: pathIndexInEditing == index ? Theme.of(context).primaryColor : Colors.transparent,
+                            width: 2,
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Row(
+                            children: [
+                              Builder(builder: (context) {
+                                // String finalString = makeCompositeCommandString(index);
+                                String fromString = paths[index].from.map((String e) => '"$e"').join(", ");
+                                String toString = paths[index].to.map((String e) => '"$e"').join(", ");
+                                String finalString = 'paths(from = c($fromString), to = c($toString))';
+                                return Text(finalString);
+                              }),
+                              Spacer(),
+                              Icon(Icons.edit),
+                            ],
+                          ),
                         ),
                       ),
                     );
@@ -232,109 +295,182 @@ class _FileChooserScreenState extends BaseState<FileChooserScreen> {
               ],
             ),
           ),
+          // COMPOSITE EDITING
           Flexible(
-              flex: 1,
-              child: compositeIndexInEditing == null
-                  ? Text("Select a composite to start editing")
-                  : ListView(
-                      padding: ThemeConstant.padding8(),
-                      children: [
-                        Text('Construct ${composites[compositeIndexInEditing!].name ?? "Untitled"}'),
-                        ThemeConstant.sizedBox16,
-                        PLSTextField(
-                          controller: _nameController,
-                          labelText: "Construct Name",
-                          onChanged: (String newVal) {
-                            setState(() => composites[compositeIndexInEditing!].name = newVal.toUpperCase());
-                          },
-                        ),
-                        ThemeConstant.sizedBox8,
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text("Use mode B for weight?"),
-                            Switch(
-                              value: composites[compositeIndexInEditing!].weight == "mode_B",
-                              onChanged: (bool value) {
-                                setState(() => composites[compositeIndexInEditing!].weight = value ? "mode_B" : null);
+            flex: compositeIndexInEditing == null ? 0 : 1,
+            child: compositeIndexInEditing == null
+                ? Container()
+                : ListView(
+                    padding: ThemeConstant.padding8(),
+                    children: [
+                      Text('Construct ${composites[compositeIndexInEditing!].name ?? "Untitled"}'),
+                      ThemeConstant.sizedBox16,
+                      PLSTextField(
+                        controller: _nameController,
+                        labelText: "Construct Name",
+                        onChanged: (String newVal) {
+                          setState(() => composites[compositeIndexInEditing!].name = newVal.toUpperCase());
+                        },
+                      ),
+                      ThemeConstant.sizedBox8,
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text("Use mode B for weight?"),
+                          Switch(
+                            value: composites[compositeIndexInEditing!].weight == "mode_B",
+                            onChanged: (bool value) {
+                              setState(() => composites[compositeIndexInEditing!].weight = value ? "mode_B" : null);
+                            },
+                          ),
+                        ],
+                      ),
+                      ThemeConstant.sizedBox8,
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text("Is this a multi item?"),
+                          Switch(
+                            value: composites[compositeIndexInEditing!].isMulti,
+                            onChanged: (bool value) {
+                              setState(() => composites[compositeIndexInEditing!].isMulti = value);
+                            },
+                          ),
+                        ],
+                      ),
+                      ThemeConstant.sizedBox8,
+                      Builder(builder: (ctx) {
+                        if (composites[compositeIndexInEditing!].isMulti) {
+                          return Column(mainAxisSize: MainAxisSize.min, children: [
+                            PLSTextField(
+                              controller: _prefixController,
+                              labelText: "Prefix",
+                              hintText: 'e.g. "cusl_"',
+                              onChanged: (String newVal) {
+                                setState(() => composites[compositeIndexInEditing!].multiItem?.prefix = newVal);
                               },
                             ),
-                          ],
-                        ),
-                        ThemeConstant.sizedBox8,
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text("Is this a multi item?"),
-                            Switch(
-                              value: composites[compositeIndexInEditing!].isMulti,
-                              onChanged: (bool value) {
-                                setState(() => composites[compositeIndexInEditing!].isMulti = value);
+                            ThemeConstant.sizedBox8,
+                            PLSTextField(
+                              controller: _fromController,
+                              labelText: "From",
+                              onChanged: (String newVal) {
+                                setState(
+                                    () => composites[compositeIndexInEditing!].multiItem?.from = int.parse(newVal));
                               },
                             ),
-                          ],
-                        ),
-                        ThemeConstant.sizedBox8,
-                        Builder(builder: (ctx) {
-                          if (composites[compositeIndexInEditing!].isMulti) {
-                            return Column(mainAxisSize: MainAxisSize.min, children: [
-                              PLSTextField(
-                                controller: _prefixController,
-                                labelText: "Prefix",
-                                hintText: 'e.g. "cusl_"',
-                                onChanged: (String newVal) {
-                                  setState(() => composites[compositeIndexInEditing!].multiItem?.prefix = newVal);
-                                },
-                              ),
-                              ThemeConstant.sizedBox8,
-                              PLSTextField(
-                                controller: _fromController,
-                                labelText: "From",
+                            ThemeConstant.sizedBox8,
+                            PLSTextField(
+                                controller: _toController,
+                                labelText: "To",
                                 onChanged: (String newVal) {
                                   setState(
-                                      () => composites[compositeIndexInEditing!].multiItem?.from = int.parse(newVal));
+                                      () => composites[compositeIndexInEditing!].multiItem?.to = int.parse(newVal));
+                                })
+                          ]);
+                        }
+                        return Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text("Single Item Variable"),
+                            SizedBox(height: 5),
+                            PLSTextField(
+                              controller: _singleItemController,
+                              labelText: "Variable Name",
+                              onChanged: (String newVal) {
+                                setState(() => composites[compositeIndexInEditing!].singleItem = newVal);
+                              },
+                            ),
+                          ],
+                        );
+                      }),
+                      ThemeConstant.sizedBox16,
+                      TextButton.icon(
+                        label: Text("Delete"),
+                        icon: Icon(Icons.delete),
+                        onPressed: () {
+                          setState(() {
+                            composites.removeAt(compositeIndexInEditing!);
+                          });
+                        },
+                      ),
+                      ThemeConstant.sizedBox8,
+                      TextButton.icon(
+                        label: Text("Save"),
+                        icon: Icon(Icons.check),
+                        onPressed: () {
+                          setState(() {
+                            compositeIndexInEditing = null;
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+          ),
+          // RELATIONSHIP PATHS EDITING
+          Flexible(
+            flex: pathIndexInEditing == null ? 0 : 1,
+            child: pathIndexInEditing == null
+                ? Container()
+                : ListView(
+                    padding: ThemeConstant.padding8(),
+                    children: [
+                      Text("From"),
+                      Builder(builder: (context) {
+                        int compositeNamesCount = possibleCompositeNames().length;
+                        return Wrap(
+                          spacing: 5.0,
+                          children: List<Widget>.generate(
+                            compositeNamesCount,
+                            (int index) {
+                              String compositeName = possibleCompositeNames()[index];
+                              return ChoiceChip(
+                                label: Text(possibleCompositeNames()[index]),
+                                selected: paths[pathIndexInEditing!].from.contains(compositeName),
+                                onSelected: (bool selected) {
+                                  if (selected == false) {
+                                    paths[pathIndexInEditing!].from.remove(compositeName);
+                                  } else {
+                                    paths[pathIndexInEditing!].from.add(compositeName);
+                                  }
+                                  setState(() {});
                                 },
-                              ),
-                              ThemeConstant.sizedBox8,
-                              PLSTextField(
-                                  controller: _toController,
-                                  labelText: "To",
-                                  onChanged: (String newVal) {
-                                    setState(
-                                        () => composites[compositeIndexInEditing!].multiItem?.to = int.parse(newVal));
-                                  })
-                            ]);
-                          }
-                          return Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text("Single Item Variable"),
-                              SizedBox(height: 5),
-                              PLSTextField(
-                                controller: _singleItemController,
-                                labelText: "Variable Name",
-                                onChanged: (String newVal) {
-                                  setState(() => composites[compositeIndexInEditing!].singleItem = newVal);
+                              );
+                            },
+                          ).toList(),
+                        );
+                      }),
+                      Text("To"),
+                      Builder(builder: (context) {
+                        int compositeNamesCount = possibleCompositeNames().length;
+                        return Wrap(
+                          spacing: 5.0,
+                          children: List<Widget>.generate(
+                            compositeNamesCount,
+                            (int index) {
+                              String compositeName = possibleCompositeNames()[index];
+                              return ChoiceChip(
+                                label: Text(possibleCompositeNames()[index]),
+                                selected: paths[pathIndexInEditing!].to.contains(compositeName),
+                                onSelected: (bool selected) {
+                                  if (selected == false) {
+                                    paths[pathIndexInEditing!].to.remove(compositeName);
+                                  } else {
+                                    paths[pathIndexInEditing!].to.add(compositeName);
+                                  }
+                                  setState(() {});
                                 },
-                              ),
-                            ],
-                          );
-                        }),
-                        Spacer(),
-                        ThemeConstant.sizedBox8,
-                        IconButton(
-                          icon: Icon(Icons.delete),
-                          onPressed: () {
-                            setState(() {
-                              composites.removeAt(compositeIndexInEditing!);
-                            });
-                          },
-                        ),
-                      ],
-                    ))
+                              );
+                            },
+                          ).toList(),
+                        );
+                      }),
+                    ],
+                  ),
+          ),
         ],
       ),
     );

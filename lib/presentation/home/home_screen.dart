@@ -5,6 +5,7 @@ import 'package:pls_flutter/data/models/seminr_summary.dart';
 import 'package:pls_flutter/presentation/file_chooser/file_chooser_screen.dart';
 import 'package:pls_flutter/presentation/home/task_chooser_screen.dart';
 import 'package:pls_flutter/presentation/base_state/base_state.dart';
+import 'package:pls_flutter/presentation/models/model_setups.dart';
 import 'package:pls_flutter/presentation/models/pls_task_view.dart';
 import 'package:pls_flutter/repositories/authentication/auth_repository.dart';
 import 'package:pls_flutter/repositories/authentication/token_repository.dart';
@@ -114,6 +115,41 @@ class _MyHomePageState extends BaseState<MyHomePage> {
 
   String instructions = "";
 
+  String makeInstructions() {
+    // String makeInstructions({required List<String> constructs, required List<String> paths}) {
+    List<String> constructs = [
+      'composite("COMP", multi_items("comp_", 1:3))',
+      'composite("LIKE", multi_items("like_", 1:3))',
+      'composite("CUSA", single_item("cusa"))',
+      'composite("CUSL", multi_items("cusl_", 1:3))',
+    ];
+
+    List<String> paths = [
+      'paths(from = c("COMP", "LIKE"), to = c("CUSA", "CUSL"))',
+      'paths(from = c("CUSA"), to = c("CUSL"))',
+    ];
+
+    String constructString = constructs.join(", ");
+    String pathsString = paths.join(", ");
+
+    return """corp_rep_mm <- constructs(
+    $constructString
+  )
+
+  corp_rep_sm <- relationships(
+    $pathsString
+  )
+
+  corp_rep_pls_model <- estimate_pls(
+    data = corp_rep_data,
+    measurement_model = corp_rep_mm,
+    structural_model = corp_rep_sm,
+    inner_weights = path_weighting,
+    missing = mean_replacement,
+    missing_value = "-99"
+  )""";
+  }
+
   @override
   void initState() {
     super.initState();
@@ -200,7 +236,10 @@ class _MyHomePageState extends BaseState<MyHomePage> {
 
   Future<List<Map<String, String>>> _addSummaryPaths() async {
     if (accessToken == null) return [];
-    SeminrSummary? summary = await PLSRepository().getSummaryPaths(userToken: accessToken!, instructions: instructions);
+    SeminrSummary? summary = await PLSRepository().getSummaryPaths(
+      userToken: accessToken!,
+      instructions: makeInstructions(),
+    );
     setState(() => seminrSummary = summary);
     return summary?.getSummaryList() ?? [];
   }
@@ -474,6 +513,13 @@ class _MyHomePageState extends BaseState<MyHomePage> {
     disableLoading();
   }
 
+  ConfiguredModel? configuredModel;
+  void _saveModelSetup(ConfiguredModel model) async {
+    enableLoading();
+    setState(() => configuredModel = model);
+    disableLoading();
+  }
+
   @override
   Widget build(BuildContext context) {
     String deviceType = _getDeviceType(context);
@@ -495,13 +541,20 @@ class _MyHomePageState extends BaseState<MyHomePage> {
                   children: [
                     TextButton(
                         onPressed: () {
+                          _login();
+                        },
+                        child: Text("Login")),
+                    TextButton(
+                        onPressed: () {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
                                 builder: (context) => FileChooserScreen(
-                                      onDoneWithChoosingFile: (String filePath) {
-                                        _uploadFile(filePath);
+                                      onDoneWithModelSetup: (ConfiguredModel model) {
+                                        // _uploadFile(model.filePath);
+                                        _saveModelSetup(model);
                                       },
+                                      configuredModel: configuredModel,
                                     )),
                           );
                         },
