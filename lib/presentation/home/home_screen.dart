@@ -112,10 +112,33 @@ class _MyHomePageState extends BaseState<MyHomePage> {
             'Moderation describes a situation in which the relationship between two constructs is not constant but depends on the values of a third variable, referred to as a moderator variable'),
   ];
 
+  String instructions = "";
+
   @override
   void initState() {
     super.initState();
     _login();
+
+    instructions = """corp_rep_mm <- constructs(
+    composite("COMP", multi_items("comp_", 1:3)),
+    composite("LIKE", multi_items("like_", 1:3)),
+    composite("CUSA", single_item("cusa")),
+    composite("CUSL", multi_items("cusl_", 1:3))
+  )
+
+  corp_rep_sm <- relationships(
+    paths(from = c("COMP", "LIKE"), to = c("CUSA", "CUSL")),
+    paths(from = c("CUSA"), to = c("CUSL"))
+  )
+
+  corp_rep_pls_model <- estimate_pls(
+    data = corp_rep_data,
+    measurement_model = corp_rep_mm,
+    structural_model = corp_rep_sm,
+    inner_weights = path_weighting,
+    missing = mean_replacement,
+    missing_value = "-99"
+  )""";
 
     taskGroups = [
       TaskGroup('Model Setup', [
@@ -177,7 +200,7 @@ class _MyHomePageState extends BaseState<MyHomePage> {
 
   Future<List<Map<String, String>>> _addSummaryPaths() async {
     if (accessToken == null) return [];
-    SeminrSummary? summary = await PLSRepository().getSummaryPaths(userToken: accessToken!);
+    SeminrSummary? summary = await PLSRepository().getSummaryPaths(userToken: accessToken!, instructions: instructions);
     setState(() => seminrSummary = summary);
     return summary?.getSummaryList() ?? [];
   }

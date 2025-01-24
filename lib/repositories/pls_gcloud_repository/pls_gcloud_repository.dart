@@ -37,42 +37,13 @@ class PLSRepository {
     }
   }
 
-  // import 'package:dio/dio.dart';
-
-  // Future<void> uploadFileWithDio({required String filePath, required String userName}) async {
-  //   try {
-  //     Dio dio = Dio();
-  //     FormData formData = FormData.fromMap({
-  //       'file': await MultipartFile.fromFile(filePath, filename: 'Corporate reputation data.csv',
-  // contentType: MediaType('text', 'csv')),
-  //     });
-
-  //     Response response = await dio.post(
-  //       'http://127.0.0.1:5555/upload',
-  //       queryParameters: {'name': userName},
-  //       data: formData,
-  //       options: Options(
-  //         headers: {
-  //           'accept': '*/*',
-  //           'Content-Type': 'multipart/form-data',
-  //         },
-  //       ),
-  //     );
-
-  //     if (response.statusCode != 200) {
-  //       throw Exception('Failed to upload file');
-  //     }
-
-  //     print('File uploaded successfully');
-  //   } catch (e) {
-  //     print('Error uploading file: $e');
-  //   }
-  // }
-
-  Future<SeminrSummary?> getSummaryPaths({required String userToken}) async {
+  Future<SeminrSummary?> getSummaryPaths({required String userToken, required String instructions}) async {
     SeminrSummary? finalResponse;
     try {
-      final response = await apiService.get(queryParams: {'manual_token': userToken}, url: summaryModelPath);
+      final response = await apiService.get(queryParams: {
+        'manual_token': userToken,
+        'instructions': instructions,
+      }, url: summaryModelPath);
 
       Map<String, dynamic> toReturn = jsonDecode(response.toString());
       finalResponse = SeminrSummary.fromJson(toReturn);

@@ -46,7 +46,7 @@ class _FormativeConvergentValidityScreenState extends State<FormativeConvergentV
 
   Future<List<Map<String, String>>> _addSummaryPaths({required String constructName}) async {
     if (accessToken == null) return [];
-    SeminrSummary? summary = await PLSRepository().getSummaryPaths(userToken: accessToken!);
+    SeminrSummary? summary = await PLSRepository().getSummaryPaths(userToken: accessToken!, instructions: "");
 
     setState(() {
       seminrSummaries = [...seminrSummaries, summary];
