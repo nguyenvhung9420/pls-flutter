@@ -3,7 +3,13 @@ class ConfiguredModel {
   List<RelationshipPath> paths;
   String delimiter;
   String filePath;
-  ConfiguredModel({required this.composites, required this.paths, required this.delimiter, required this.filePath});
+  bool usePathWeighting;
+  ConfiguredModel(
+      {required this.composites,
+      required this.paths,
+      required this.delimiter,
+      required this.filePath,
+      required this.usePathWeighting});
 }
 
 class MultiItem {

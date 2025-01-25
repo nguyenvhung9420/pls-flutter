@@ -11,7 +11,7 @@ class MyApp extends StatelessWidget {
 
   ThemeData lightTheme(BuildContext context) => ThemeData(
         // useMaterial3: false,
-        fontFamily: GoogleFonts.robotoMono().fontFamily,
+        fontFamily: GoogleFonts.inter().fontFamily,
         appBarTheme: AppBarTheme(backgroundColor: Colors.white),
         scaffoldBackgroundColor: const Color(0xFFF7F2EF),
         colorScheme: const ColorScheme.light(

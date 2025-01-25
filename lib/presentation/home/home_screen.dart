@@ -3,7 +3,6 @@ import 'package:pls_flutter/data/models/boostrap_summary.dart';
 import 'package:pls_flutter/data/models/predict_models_comparison.dart';
 import 'package:pls_flutter/data/models/seminr_summary.dart';
 import 'package:pls_flutter/presentation/file_chooser/file_chooser_screen.dart';
-import 'package:pls_flutter/presentation/home/task_chooser_screen.dart';
 import 'package:pls_flutter/presentation/base_state/base_state.dart';
 import 'package:pls_flutter/presentation/models/model_setups.dart';
 import 'package:pls_flutter/presentation/models/pls_task_view.dart';
@@ -23,30 +22,41 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends BaseState<MyHomePage> {
   String? accessToken;
+  ConfiguredModel? configuredModel;
 
   final List<PlsTask> plsTaskList = [
     PlsTask(
       taskCode: 'model_summary',
       name: 'Model Summary',
-      description: 'Serve as basis for the assessment of the measurement and structural model',
+      description:
+          'Serve as basis for the assessment of the measurement and structural model',
     ),
     PlsTask(
       taskCode: 'model_bootstrap_summary',
       name: 'Bootstrap Summary',
-      description: 'Perform bootstrapping to estimate standard errors and compute confidence intervals',
+      description:
+          'Perform bootstrapping to estimate standard errors and compute confidence intervals',
     ),
     PlsTask(
       taskCode: 'indicator_reliability',
       name: 'Indicator reliability',
-      description: 'Indicator reliability can be calculated by squaring the loadings.',
+      description:
+          'Indicator reliability can be calculated by squaring the loadings.',
     ),
     PlsTask(
       taskCode: 'internal_consistency_reliability',
       name: 'Internal consistency reliability',
-      description: 'The extent to which indicators measuring the same construct are associated with each other',
+      description:
+          'The extent to which indicators measuring the same construct are associated with each other',
     ),
-    PlsTask(taskCode: 'convergent_validity', name: 'Convergent Validity', description: 'Description for Item 5'),
-    PlsTask(taskCode: 'discriminant_validity', name: 'Discriminant Validty', description: 'Description for Item 5'),
+    PlsTask(
+        taskCode: 'convergent_validity',
+        name: 'Convergent Validity',
+        description: 'Description for Item 5'),
+    PlsTask(
+        taskCode: 'discriminant_validity',
+        name: 'Discriminant Validty',
+        description: 'Description for Item 5'),
     PlsTask(
         taskCode: 'evaluation_of_formative_basic',
         name: 'Model and measurement details',
@@ -115,22 +125,34 @@ class _MyHomePageState extends BaseState<MyHomePage> {
 
   String instructions = "";
 
-  String makeInstructions() {
-    // String makeInstructions({required List<String> constructs, required List<String> paths}) {
-    List<String> constructs = [
-      'composite("COMP", multi_items("comp_", 1:3))',
-      'composite("LIKE", multi_items("like_", 1:3))',
-      'composite("CUSA", single_item("cusa"))',
-      'composite("CUSL", multi_items("cusl_", 1:3))',
-    ];
+  // String makeInstructions() {
+  String makeInstructions({required ConfiguredModel model}) {
+    List<String> constructs = model.composites.map((Composite composite) {
+      if (composite.isMulti) {
+        return 'composite("${composite.name}", multi_items("${composite.multiItem!.prefix}", ${composite.multiItem!.from}:${composite.multiItem!.to}))';
+      } else {
+        return 'composite("${composite.name}", single_item("${composite.singleItem}"))';
+      }
+    }).toList();
+    // List<String> constructs = [
+    //   'composite("COMP", multi_items("comp_", 1:3))',
+    //   'composite("LIKE", multi_items("like_", 1:3))',
+    //   'composite("CUSA", single_item("cusa"))',
+    //   'composite("CUSL", multi_items("cusl_", 1:3))',
+    // ];
 
-    List<String> paths = [
-      'paths(from = c("COMP", "LIKE"), to = c("CUSA", "CUSL"))',
-      'paths(from = c("CUSA"), to = c("CUSL"))',
-    ];
+    List<String> paths = model.paths.map((RelationshipPath path) {
+      return 'paths(from = c("${path.from.join('", "')}"), to = c("${path.to.join('", "')}"))';
+    }).toList();
+    // List<String> paths = [
+    // 'paths(from = c("COMP", "LIKE"), to = c("CUSA", "CUSL"))',
+    // 'paths(from = c("CUSA"), to = c("CUSL"))',
+    // ];
 
     String constructString = constructs.join(", ");
     String pathsString = paths.join(", ");
+    String usingPathWeighting =
+        model.usePathWeighting ? "inner_weights = path_weighting," : "";
 
     return """corp_rep_mm <- constructs(
     $constructString
@@ -144,7 +166,7 @@ class _MyHomePageState extends BaseState<MyHomePage> {
     data = corp_rep_data,
     measurement_model = corp_rep_mm,
     structural_model = corp_rep_sm,
-    inner_weights = path_weighting,
+    $usingPathWeighting
     missing = mean_replacement,
     missing_value = "-99"
   )""";
@@ -226,7 +248,8 @@ class _MyHomePageState extends BaseState<MyHomePage> {
       return;
     }
 
-    accessToken = await AuthRepository().login(loginBody: {"username": "hungnguyen_pls_sem", "password": "secret"});
+    accessToken = await AuthRepository().login(
+        loginBody: {"username": "hungnguyen_pls_sem", "password": "secret"});
 
     if (accessToken != null) {
       await AuthTokenRepository().saveAuthToken(token: accessToken!);
@@ -236,9 +259,11 @@ class _MyHomePageState extends BaseState<MyHomePage> {
 
   Future<List<Map<String, String>>> _addSummaryPaths() async {
     if (accessToken == null) return [];
+    if (configuredModel == null) return [];
+
     SeminrSummary? summary = await PLSRepository().getSummaryPaths(
       userToken: accessToken!,
-      instructions: makeInstructions(),
+      instructions: makeInstructions(model: configuredModel!),
     );
     setState(() => seminrSummary = summary);
     return summary?.getSummaryList() ?? [];
@@ -246,7 +271,8 @@ class _MyHomePageState extends BaseState<MyHomePage> {
 
   Future<List<Map<String, String>>> _addBootstrapSummary() async {
     if (accessToken == null) return [];
-    BootstrapSummary? summary = await PLSRepository().getBoostrapSummary(userToken: accessToken!);
+    BootstrapSummary? summary =
+        await PLSRepository().getBoostrapSummary(userToken: accessToken!);
     setState(() => bootstrapSummary = summary);
     return summary?.getBootstrapSummaryList() ?? [];
   }
@@ -287,25 +313,34 @@ class _MyHomePageState extends BaseState<MyHomePage> {
   Future<List<Map<String, String>>> _addDiscriminantValidity() async {
     if (seminrSummary == null) await _addSummaryPaths();
     if (bootstrapSummary == null) await _addBootstrapSummary();
-    List<Map<String, String>> toReturn = seminrSummary?.validity?.getValidityList() ?? [];
-    toReturn.add({"name": "Bootstraped HTMT", "value": bootstrapSummary?.bootstrappedHtmt?.join("\n") ?? ""});
+    List<Map<String, String>> toReturn =
+        seminrSummary?.validity?.getValidityList() ?? [];
+    toReturn.add({
+      "name": "Bootstraped HTMT",
+      "value": bootstrapSummary?.bootstrappedHtmt?.join("\n") ?? ""
+    });
     return toReturn;
   }
 
   // getSignificanceRelevanceOfIndicatorWeights
-  Future<List<Map<String, String>>> _addSignificanceRelevanceOfIndicatorWeights() async {
+  Future<List<Map<String, String>>>
+      _addSignificanceRelevanceOfIndicatorWeights() async {
     if (accessToken == null) return [];
-    BootstrapSummary? summary =
-        await PLSRepository().getSignificanceRelevanceOfIndicatorWeights(userToken: accessToken!);
+    BootstrapSummary? summary = await PLSRepository()
+        .getSignificanceRelevanceOfIndicatorWeights(userToken: accessToken!);
     setState(() => significanceRelevanceOfIndicatorWeights = summary);
     return [
       {
         "name": "Bootstraped Weights",
-        "value": significanceRelevanceOfIndicatorWeights?.bootstrappedWeights?.join("\n") ?? "",
+        "value": significanceRelevanceOfIndicatorWeights?.bootstrappedWeights
+                ?.join("\n") ??
+            "",
       },
       {
         "name": "Bootstraped Loadings",
-        "value": significanceRelevanceOfIndicatorWeights?.bootstrappedLoadings?.join("\n") ?? "",
+        "value": significanceRelevanceOfIndicatorWeights?.bootstrappedLoadings
+                ?.join("\n") ??
+            "",
       },
     ];
   }
@@ -325,7 +360,8 @@ class _MyHomePageState extends BaseState<MyHomePage> {
         "value": seminrSummary?.loadingsSquared?.join("\n") ?? "",
       },
       {
-        "name": "Internal consistence reliability and convergent validity - Fornell-Larcker criterion",
+        "name":
+            "Internal consistence reliability and convergent validity - Fornell-Larcker criterion",
         "value": seminrSummary?.validity?.flCriteria?.join("\n") ?? "",
       },
       {
@@ -334,7 +370,8 @@ class _MyHomePageState extends BaseState<MyHomePage> {
         "value": seminrSummary?.validity?.htmt?.join("\n") ?? "",
       },
       {
-        "name": "Internal consistence reliability and convergent validity - Bootstrapped HTMT",
+        "name":
+            "Internal consistence reliability and convergent validity - Bootstrapped HTMT",
         "value": bootstrapSummary?.bootstrappedHtmt?.join("\n") ?? "",
       },
     ];
@@ -364,12 +401,18 @@ class _MyHomePageState extends BaseState<MyHomePage> {
   }
 
   // Significance and relevance of the structural model relationships
-  Future<List<Map<String, String>>> _addSignificanceRelevanceOfRelationships() async {
+  Future<List<Map<String, String>>>
+      _addSignificanceRelevanceOfRelationships() async {
     if (bootstrapSummary == null) await _addBootstrapSummary();
     List<Map<String, String>> toReturn = [];
-    toReturn.add({"name": "Bootstraped Paths", "value": bootstrapSummary?.bootstrappedPaths?.join("\n") ?? ""});
-    toReturn
-        .add({"name": "Bootstraped Total Paths", "value": bootstrapSummary?.bootstrappedTotalPaths?.join("\n") ?? ""});
+    toReturn.add({
+      "name": "Bootstraped Paths",
+      "value": bootstrapSummary?.bootstrappedPaths?.join("\n") ?? ""
+    });
+    toReturn.add({
+      "name": "Bootstraped Total Paths",
+      "value": bootstrapSummary?.bootstrappedTotalPaths?.join("\n") ?? ""
+    });
     return toReturn;
   }
 
@@ -377,8 +420,12 @@ class _MyHomePageState extends BaseState<MyHomePage> {
   Future<List<Map<String, String>>> _addExplanatoryPower() async {
     if (seminrSummary == null) await _addSummaryPaths();
     List<Map<String, String>> toReturn = [];
-    toReturn.add({"name": "Paths", "value": seminrSummary?.paths?.join("\n") ?? ""});
-    toReturn.add({"name": "F Squared", "value": seminrSummary?.fSquare?.join("\n") ?? ""});
+    toReturn.add(
+        {"name": "Paths", "value": seminrSummary?.paths?.join("\n") ?? ""});
+    toReturn.add({
+      "name": "F Squared",
+      "value": seminrSummary?.fSquare?.join("\n") ?? ""
+    });
     return toReturn;
   }
 
@@ -394,7 +441,8 @@ class _MyHomePageState extends BaseState<MyHomePage> {
   Future<List<Map<String, String>>> _addPredictiveModelComparisons() async {
     List<Map<String, String>> toReturn = [];
 
-    PredictModelsComparison? predict = await PLSRepository().getComparePredictModels(userToken: accessToken!);
+    PredictModelsComparison? predict =
+        await PLSRepository().getComparePredictModels(userToken: accessToken!);
 
     toReturn.add({
       "name": "Predictive model comparisons - itcriteria weights",
@@ -431,7 +479,8 @@ class _MyHomePageState extends BaseState<MyHomePage> {
 
   Future<List<Map<String, String>>> _addModerationAnalysis() async {
     if (accessToken == null) return [];
-    BootstrapSummary? summary = await PLSRepository().getModerationAnalysis(userToken: accessToken!);
+    BootstrapSummary? summary =
+        await PLSRepository().getModerationAnalysis(userToken: accessToken!);
     return [
       {
         "name": "Bootstraped Paths",
@@ -508,13 +557,14 @@ class _MyHomePageState extends BaseState<MyHomePage> {
   void _uploadFile(String filePath) async {
     enableLoading();
     if (accessToken == null) return;
-    SeminrSummary? summary = await PLSRepository().uploadFile(userToken: accessToken!, filePath: filePath);
+    SeminrSummary? summary = await PLSRepository()
+        .uploadFile(userToken: accessToken!, filePath: filePath);
     setState(() => seminrSummary = summary);
     disableLoading();
   }
 
-  ConfiguredModel? configuredModel;
   void _saveModelSetup(ConfiguredModel model) async {
+    // _uploadFile(model.filePath);
     enableLoading();
     setState(() => configuredModel = model);
     disableLoading();
@@ -550,8 +600,8 @@ class _MyHomePageState extends BaseState<MyHomePage> {
                             context,
                             MaterialPageRoute(
                                 builder: (context) => FileChooserScreen(
-                                      onDoneWithModelSetup: (ConfiguredModel model) {
-                                        // _uploadFile(model.filePath);
+                                      onDoneWithModelSetup:
+                                          (ConfiguredModel model) {
                                         _saveModelSetup(model);
                                       },
                                       configuredModel: configuredModel,
@@ -608,8 +658,10 @@ class _MyHomePageState extends BaseState<MyHomePage> {
                           itemBuilder: (context, index) {
                             return Card(
                               child: ListTile(
-                                title: Text(textDataToShow[index]["name"] ?? ""),
-                                subtitle: Text(textDataToShow[index]["value"] ?? ""),
+                                title:
+                                    Text(textDataToShow[index]["name"] ?? ""),
+                                subtitle:
+                                    Text(textDataToShow[index]["value"] ?? ""),
                               ),
                             );
                           }),
