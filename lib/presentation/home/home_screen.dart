@@ -1,7 +1,12 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:pls_flutter/data/models/boostrap_summary.dart';
 import 'package:pls_flutter/data/models/predict_models_comparison.dart';
+import 'package:pls_flutter/data/models/predict_summary.dart';
 import 'package:pls_flutter/data/models/seminr_summary.dart';
+import 'package:pls_flutter/data/models/specific_effect_significance.dart';
 import 'package:pls_flutter/presentation/file_chooser/file_chooser_screen.dart';
 import 'package:pls_flutter/presentation/base_state/base_state.dart';
 import 'package:pls_flutter/presentation/models/model_setups.dart';
@@ -10,6 +15,7 @@ import 'package:pls_flutter/repositories/authentication/auth_repository.dart';
 import 'package:pls_flutter/repositories/authentication/token_repository.dart';
 import 'package:pls_flutter/repositories/pls_gcloud_repository/pls_gcloud_repository.dart';
 import 'package:device_type/device_type.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
@@ -121,6 +127,12 @@ class _MyHomePageState extends BaseState<MyHomePage> {
         name: 'Moderation analysis',
         description:
             'Moderation describes a situation in which the relationship between two constructs is not constant but depends on the values of a third variable, referred to as a moderator variable'),
+
+    // Reliability plot
+    PlsTask(
+        taskCode: 'reliability_plot',
+        name: 'Reliability plot',
+        description: 'Reliability plot'),
   ];
 
   String instructions = "";
@@ -128,26 +140,12 @@ class _MyHomePageState extends BaseState<MyHomePage> {
   // String makeInstructions() {
   String makeInstructions({required ConfiguredModel model}) {
     List<String> constructs = model.composites.map((Composite composite) {
-      if (composite.isMulti) {
-        return 'composite("${composite.name}", multi_items("${composite.multiItem!.prefix}", ${composite.multiItem!.from}:${composite.multiItem!.to}))';
-      } else {
-        return 'composite("${composite.name}", single_item("${composite.singleItem}"))';
-      }
+      return composite.makeCompositeCommandString();
     }).toList();
-    // List<String> constructs = [
-    //   'composite("COMP", multi_items("comp_", 1:3))',
-    //   'composite("LIKE", multi_items("like_", 1:3))',
-    //   'composite("CUSA", single_item("cusa"))',
-    //   'composite("CUSL", multi_items("cusl_", 1:3))',
-    // ];
 
     List<String> paths = model.paths.map((RelationshipPath path) {
-      return 'paths(from = c("${path.from.join('", "')}"), to = c("${path.to.join('", "')}"))';
+      return path.makePathString();
     }).toList();
-    // List<String> paths = [
-    // 'paths(from = c("COMP", "LIKE"), to = c("CUSA", "CUSL"))',
-    // 'paths(from = c("CUSA"), to = c("CUSL"))',
-    // ];
 
     String constructString = constructs.join(", ");
     String pathsString = paths.join(", ");
@@ -177,31 +175,11 @@ class _MyHomePageState extends BaseState<MyHomePage> {
     super.initState();
     _login();
 
-    instructions = """corp_rep_mm <- constructs(
-    composite("COMP", multi_items("comp_", 1:3)),
-    composite("LIKE", multi_items("like_", 1:3)),
-    composite("CUSA", single_item("cusa")),
-    composite("CUSL", multi_items("cusl_", 1:3))
-  )
-
-  corp_rep_sm <- relationships(
-    paths(from = c("COMP", "LIKE"), to = c("CUSA", "CUSL")),
-    paths(from = c("CUSA"), to = c("CUSL"))
-  )
-
-  corp_rep_pls_model <- estimate_pls(
-    data = corp_rep_data,
-    measurement_model = corp_rep_mm,
-    structural_model = corp_rep_sm,
-    inner_weights = path_weighting,
-    missing = mean_replacement,
-    missing_value = "-99"
-  )""";
-
     taskGroups = [
       TaskGroup('Model Setup', [
         plsTaskList[0],
         plsTaskList[1],
+        plsTaskList[16],
       ]),
       TaskGroup('Evaluation of reflective measurement models', [
         plsTaskList[2],
@@ -237,8 +215,12 @@ class _MyHomePageState extends BaseState<MyHomePage> {
   PlsTask? selectedTask;
 
   BootstrapSummary? bootstrapSummary;
+  PredictSummary? predictSummary;
   BootstrapSummary? significanceRelevanceOfIndicatorWeights;
   SeminrSummary? seminrSummary;
+  SpecificEffectSignificance? specificEffectSignificance;
+
+  dynamic dataBytes;
 
   void _login() async {
     accessToken = await AuthTokenRepository().getCurrentAuthToken();
@@ -260,10 +242,12 @@ class _MyHomePageState extends BaseState<MyHomePage> {
   Future<List<Map<String, String>>> _addSummaryPaths() async {
     if (accessToken == null) return [];
     if (configuredModel == null) return [];
+    if (configuredModel?.filePath == null) return [];
 
     SeminrSummary? summary = await PLSRepository().getSummaryPaths(
       userToken: accessToken!,
       instructions: makeInstructions(model: configuredModel!),
+      filePath: configuredModel!.filePath,
     );
     setState(() => seminrSummary = summary);
     return summary?.getSummaryList() ?? [];
@@ -271,8 +255,14 @@ class _MyHomePageState extends BaseState<MyHomePage> {
 
   Future<List<Map<String, String>>> _addBootstrapSummary() async {
     if (accessToken == null) return [];
-    BootstrapSummary? summary =
-        await PLSRepository().getBoostrapSummary(userToken: accessToken!);
+    if (configuredModel == null) return [];
+    if (configuredModel?.filePath == null) return [];
+
+    BootstrapSummary? summary = await PLSRepository().getBoostrapSummary(
+      userToken: accessToken!,
+      instructions: makeInstructions(model: configuredModel!),
+      filePath: configuredModel!.filePath,
+    );
     setState(() => bootstrapSummary = summary);
     return summary?.getBootstrapSummaryList() ?? [];
   }
@@ -325,9 +315,16 @@ class _MyHomePageState extends BaseState<MyHomePage> {
   // getSignificanceRelevanceOfIndicatorWeights
   Future<List<Map<String, String>>>
       _addSignificanceRelevanceOfIndicatorWeights() async {
+    if (configuredModel == null) return [];
+    if (configuredModel?.filePath == null) return [];
     if (accessToken == null) return [];
-    BootstrapSummary? summary = await PLSRepository()
-        .getSignificanceRelevanceOfIndicatorWeights(userToken: accessToken!);
+
+    BootstrapSummary? summary =
+        await PLSRepository().getSignificanceRelevanceOfIndicatorWeights(
+      userToken: accessToken!,
+      instructions: makeInstructions(model: configuredModel!),
+      filePath: configuredModel!.filePath,
+    );
     setState(() => significanceRelevanceOfIndicatorWeights = summary);
     return [
       {
@@ -429,12 +426,24 @@ class _MyHomePageState extends BaseState<MyHomePage> {
     return toReturn;
   }
 
-  // Explanatory power
-  Future<List<Map<String, String>>> _addPredictivePower() async {
-    List<Map<String, String>> toReturn = [];
-    toReturn.add({"name": "Inspect prediction errors", "value": "WIP"});
+  // Get general model prediction:
+  Future<List<Map<String, String>>> _addGeneralModelPrediction() async {
+    if (accessToken == null) return [];
+    if (configuredModel == null) return [];
+    if (configuredModel?.filePath == null) return [];
 
-    return toReturn;
+    PredictSummary? summary = await PLSRepository().getGeneralPrediction(
+      userToken: accessToken!,
+      instructions: makeInstructions(model: configuredModel!),
+      filePath: configuredModel!.filePath,
+    );
+    setState(() => predictSummary = summary);
+    return [
+      {
+        "name": "Prediction Summary",
+        "value": summary?.predictSummary?.join("\n") ?? "",
+      },
+    ];
   }
 
   // Predictive model comparisons
@@ -458,6 +467,30 @@ class _MyHomePageState extends BaseState<MyHomePage> {
     if (seminrSummary == null) await _addSummaryPaths();
     if (bootstrapSummary == null) await _addBootstrapSummary();
 
+    // specific_effect_significance:
+    if (accessToken == null) return [];
+    if (configuredModel == null) return [];
+    if (configuredModel?.filePath == null) return [];
+
+    SpecificEffectSignificance? specificEffectSignificance =
+        await PLSRepository().getSpecificEffectSignificance(
+      userToken: accessToken!,
+      instructions: makeInstructions(model: configuredModel!),
+      filePath: configuredModel!.filePath,
+      from: "COMP",
+      through: "CUSA",
+      to: "CUSL",
+    );
+    setState(
+        () => this.specificEffectSignificance = specificEffectSignificance);
+    toReturn.add(
+      {
+        "name": "Specific Effect Significance",
+        "value": specificEffectSignificance?.specificEffectSignificance
+                ?.join("\n") ??
+            "",
+      },
+    );
     toReturn.add({
       "name": "Total Effects",
       "value": seminrSummary?.totalEffects?.join("\n") ?? "",
@@ -479,14 +512,33 @@ class _MyHomePageState extends BaseState<MyHomePage> {
 
   Future<List<Map<String, String>>> _addModerationAnalysis() async {
     if (accessToken == null) return [];
-    BootstrapSummary? summary =
-        await PLSRepository().getModerationAnalysis(userToken: accessToken!);
+    if (configuredModel == null) return [];
+    if (configuredModel?.filePath == null) return [];
+    BootstrapSummary? summary = await PLSRepository().getModerationAnalysis(
+        userToken: accessToken!,
+        filePath: configuredModel!.filePath,
+        instructions: makeInstructions(model: configuredModel!));
     return [
       {
         "name": "Bootstraped Paths",
         "value": summary?.bootstrappedPaths?.join("\n") ?? "",
       }
     ];
+  }
+
+  Future<dynamic> _getPlotReliability() async {
+    if (accessToken == null) return [];
+    if (configuredModel == null) return [];
+    if (configuredModel?.filePath == null) return [];
+
+    dynamic bytes = await PLSRepository().getPlotReliability(
+        userToken: accessToken!,
+        filePath: configuredModel!.filePath,
+        instructions: makeInstructions(model: configuredModel!));
+
+    return bytes;
+
+    // return Image.memory(bytes).image;
   }
 
   void onSelectedTask(PlsTask task) async {
@@ -532,7 +584,7 @@ class _MyHomePageState extends BaseState<MyHomePage> {
         textToShow = await _addExplanatoryPower();
         break;
       case 'predictive_power':
-        textToShow = await _addPredictivePower();
+        textToShow = await _addGeneralModelPrediction();
         break;
       case 'predict_models_comparisons':
         textToShow = await _addPredictiveModelComparisons();
@@ -543,6 +595,10 @@ class _MyHomePageState extends BaseState<MyHomePage> {
       case 'moderation_analysis':
         textToShow = await _addModerationAnalysis();
         break;
+      case 'reliability_plot':
+        dataBytes = await _getPlotReliability();
+        setState(() {});
+        break;
       default:
         textToShow = [];
     }
@@ -552,15 +608,6 @@ class _MyHomePageState extends BaseState<MyHomePage> {
 
   String _getDeviceType(BuildContext context) {
     return DeviceType.getDeviceType(context);
-  }
-
-  void _uploadFile(String filePath) async {
-    enableLoading();
-    if (accessToken == null) return;
-    SeminrSummary? summary = await PLSRepository()
-        .uploadFile(userToken: accessToken!, filePath: filePath);
-    setState(() => seminrSummary = summary);
-    disableLoading();
   }
 
   void _saveModelSetup(ConfiguredModel model) async {
@@ -656,14 +703,26 @@ class _MyHomePageState extends BaseState<MyHomePage> {
                           shrinkWrap: true,
                           itemCount: textDataToShow.length,
                           itemBuilder: (context, index) {
-                            return Card(
-                              child: ListTile(
-                                title:
-                                    Text(textDataToShow[index]["name"] ?? ""),
-                                subtitle:
-                                    Text(textDataToShow[index]["value"] ?? ""),
-                              ),
-                            );
+                            switch (selectedTask?.taskCode) {
+                              case 'reliability_plot':
+                              default:
+                                return Card(
+                                  child: ListTile(
+                                    title: Text(
+                                      textDataToShow[index]["name"] ?? "",
+                                      style: TextStyle(
+                                          fontFamily: GoogleFonts.robotoMono()
+                                              .fontFamily),
+                                    ),
+                                    subtitle: Text(
+                                      textDataToShow[index]["value"] ?? "",
+                                      style: TextStyle(
+                                          fontFamily: GoogleFonts.robotoMono()
+                                              .fontFamily),
+                                    ),
+                                  ),
+                                );
+                            }
                           }),
                     ],
                   ),

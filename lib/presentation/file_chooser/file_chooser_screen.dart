@@ -1,3 +1,4 @@
+import 'package:csv/csv.dart';
 import 'package:flutter/material.dart';
 import 'package:pls_flutter/presentation/base_state/base_state.dart';
 import 'dart:convert';
@@ -66,6 +67,23 @@ class _FileChooserScreenState extends BaseState<FileChooserScreen> {
     await _processFile(filePath);
   }
 
+  // void _testPickFile() async {
+  //   if (_fieldDelimiter == null) return;
+  //   final result = await FilePicker.platform.pickFiles(allowMultiple: false);
+  //   if (result == null) return;
+  //   filePath = result.files.single.path!;
+  //   // setState(() {
+  //   //   filePath = filePath;
+  //   // });
+  //   final input = File(filePath!).openRead();
+  //   final List<List<dynamic>> fields = await input
+  //       .transform(utf8.decoder)
+  //       .transform(CsvToListConverter())
+  //       .toList();
+
+  //   debugPrint(">>> fields: $fields");
+  // }
+
   Future<void> _processFile(String? filePath) async {
     final input = File(filePath!).openRead();
     final List<String> fields =
@@ -112,10 +130,11 @@ class _FileChooserScreenState extends BaseState<FileChooserScreen> {
   int? pathIndexInEditing;
 
   List<String> possibleCompositeNames() {
-    return composites
+    List<String> normalComposites = composites
         .map((Composite e) => e.name ?? "")
         .where((String element) => element.isNotEmpty)
         .toList();
+    return normalComposites;
   }
 
   final TextEditingController _nameController = TextEditingController();
@@ -167,6 +186,8 @@ class _FileChooserScreenState extends BaseState<FileChooserScreen> {
                 ),
                 ElevatedButton(
                   onPressed: _fieldDelimiter != null ? () => _pickFile() : null,
+                  // onPressed:
+                  //     _fieldDelimiter != null ? () => _testPickFile() : null,
                   child: const Text("Upload File"),
                 ),
                 Text(
@@ -215,6 +236,11 @@ class _FileChooserScreenState extends BaseState<FileChooserScreen> {
                                   onPressed: () =>
                                       _populateDataFromModel(corpDataModelExt),
                                   child: Text("Load extended setup")),
+                              TextButton(
+                                  onPressed: () => _populateDataFromModel(
+                                      corpDataModelExtModeration),
+                                  child: Text(
+                                      "Load extended setup with Moderation Analysis")),
                             ],
                           )
                         ]),
@@ -225,12 +251,16 @@ class _FileChooserScreenState extends BaseState<FileChooserScreen> {
                   TextButton(
                       onPressed: () {
                         composites.add(Composite(
-                            name: "[No Name]",
-                            weight: null,
-                            singleItem: null,
-                            multiItem: MultiItem(
-                                prefix: "construction", from: 1, to: 1),
-                            isMulti: true));
+                          name: "[No Name]",
+                          weight: null,
+                          singleItem: null,
+                          multiItem:
+                              MultiItem(prefix: "construction", from: 1, to: 1),
+                          isMulti: true,
+                          isInteractionTerm: false,
+                          iv: null,
+                          moderator: null,
+                        ));
                         compositeIndexInEditing = composites.length - 1;
                         pathIndexInEditing = null;
                         setState(() {});
@@ -327,17 +357,7 @@ class _FileChooserScreenState extends BaseState<FileChooserScreen> {
                           child: Row(
                             children: [
                               Builder(builder: (context) {
-                                // String finalString = makeCompositeCommandString(index);
-                                String fromString = paths[index]
-                                    .from
-                                    .map((String e) => '"$e"')
-                                    .join(", ");
-                                String toString = paths[index]
-                                    .to
-                                    .map((String e) => '"$e"')
-                                    .join(", ");
-                                String finalString =
-                                    'paths(from = c($fromString), to = c($toString))';
+                                String finalString = _makePathString(index);
                                 return Text(finalString);
                               }),
                               Spacer(),
@@ -394,6 +414,25 @@ class _FileChooserScreenState extends BaseState<FileChooserScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisSize: MainAxisSize.min,
                         children: [
+                          // interaction_term(iv = "CUSA", moderator = "SC", method = two_stage))
+                          Text(
+                              "Is this an interaction term (for Moderation analysis)?"),
+                          Switch(
+                            value: composites[compositeIndexInEditing!]
+                                .isInteractionTerm,
+                            onChanged: (bool value) {
+                              setState(() =>
+                                  composites[compositeIndexInEditing!]
+                                      .isInteractionTerm = value);
+                            },
+                          ),
+                        ],
+                      ),
+                      ThemeConstant.sizedBox8,
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
                           Text("Is this a multi item?"),
                           Switch(
                             value: composites[compositeIndexInEditing!].isMulti,
@@ -407,6 +446,51 @@ class _FileChooserScreenState extends BaseState<FileChooserScreen> {
                       ),
                       ThemeConstant.sizedBox8,
                       Builder(builder: (ctx) {
+                        if (composites[compositeIndexInEditing!]
+                            .isInteractionTerm) {
+                          return Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                PLSTextField(
+                                  controller: _prefixController,
+                                  labelText: "Independent Variable (IV)",
+                                  hintText: 'e.g. "CUSA"',
+                                  onChanged: (String newVal) {
+                                    setState(() {
+                                      composites[compositeIndexInEditing!].iv =
+                                          newVal;
+                                      composites[compositeIndexInEditing!]
+                                              .name =
+                                          '${composites[compositeIndexInEditing!].iv}*${composites[compositeIndexInEditing!].moderator}';
+                                    });
+                                    _nameController.text =
+                                        composites[compositeIndexInEditing!]
+                                                .name ??
+                                            "";
+                                  },
+                                ),
+                                ThemeConstant.sizedBox8,
+                                PLSTextField(
+                                  controller: _fromController,
+                                  labelText: "Moderator",
+                                  onChanged: (String newVal) {
+                                    setState(() {
+                                      composites[compositeIndexInEditing!]
+                                          .moderator = newVal;
+                                      composites[compositeIndexInEditing!]
+                                              .name =
+                                          '${composites[compositeIndexInEditing!].iv}*${composites[compositeIndexInEditing!].moderator}';
+
+                                      _nameController.text =
+                                          composites[compositeIndexInEditing!]
+                                                  .name ??
+                                              "";
+                                    });
+                                  },
+                                ),
+                              ]);
+                        }
+
                         if (composites[compositeIndexInEditing!].isMulti) {
                           return Column(
                               mainAxisSize: MainAxisSize.min,
@@ -579,20 +663,12 @@ class _FileChooserScreenState extends BaseState<FileChooserScreen> {
     }
   }
 
+  String _makePathString(int index) {
+    return paths[index].makePathString();
+  }
+
   String makeCompositeCommandString(int index) {
-    String? compositeName = composites[index].name;
-    String? itemPrefix = composites[index].multiItem?.prefix;
-    String? singleItemName = composites[index].singleItem;
-    String range =
-        "${composites[index].multiItem?.from}:${composites[index].multiItem?.to}";
-    String itemString = "";
-    if (composites[index].isMulti) {
-      itemString = 'multi_items("$itemPrefix", $range)';
-    } else {
-      itemString = 'single_item("$singleItemName")';
-    }
-    String finalString = 'composite("$compositeName", $itemString)';
-    return finalString;
+    return composites[index].makeCompositeCommandString();
   }
 }
 

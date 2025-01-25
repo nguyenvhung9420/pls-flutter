@@ -10,10 +10,12 @@ class FormativeConvergentValidityScreen extends StatefulWidget {
   const FormativeConvergentValidityScreen({super.key});
 
   @override
-  State<FormativeConvergentValidityScreen> createState() => _FormativeConvergentValidityScreenState();
+  State<FormativeConvergentValidityScreen> createState() =>
+      _FormativeConvergentValidityScreenState();
 }
 
-class _FormativeConvergentValidityScreenState extends State<FormativeConvergentValidityScreen> {
+class _FormativeConvergentValidityScreenState
+    extends State<FormativeConvergentValidityScreen> {
   String? accessToken;
   PlsTask? selectedTask;
   BootstrapSummary? bootstrapSummary;
@@ -36,7 +38,8 @@ class _FormativeConvergentValidityScreenState extends State<FormativeConvergentV
       return;
     }
 
-    accessToken = await AuthRepository().login(loginBody: {"username": "hungnguyen_pls_sem", "password": "secret"});
+    accessToken = await AuthRepository().login(
+        loginBody: {"username": "hungnguyen_pls_sem", "password": "secret"});
 
     if (accessToken != null) {
       await AuthTokenRepository().saveAuthToken(token: accessToken!);
@@ -44,9 +47,14 @@ class _FormativeConvergentValidityScreenState extends State<FormativeConvergentV
     }
   }
 
-  Future<List<Map<String, String>>> _addSummaryPaths({required String constructName}) async {
+  Future<List<Map<String, String>>> _addSummaryPaths(
+      {required String constructName}) async {
     if (accessToken == null) return [];
-    SeminrSummary? summary = await PLSRepository().getSummaryPaths(userToken: accessToken!, instructions: "");
+    SeminrSummary? summary = await PLSRepository().getSummaryPaths(
+      userToken: accessToken!,
+      instructions: "",
+      filePath: '',
+    );
 
     setState(() {
       seminrSummaries = [...seminrSummaries, summary];
