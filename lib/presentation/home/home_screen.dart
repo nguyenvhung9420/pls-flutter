@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:pls_flutter/data/models/boostrap_summary.dart';
+import 'package:pls_flutter/data/models/plot_data.dart';
 import 'package:pls_flutter/data/models/predict_models_comparison.dart';
 import 'package:pls_flutter/data/models/predict_summary.dart';
 import 'package:pls_flutter/data/models/seminr_summary.dart';
@@ -13,6 +14,7 @@ import 'package:pls_flutter/presentation/home/formative_convergent_validity_scre
 import 'package:pls_flutter/presentation/home/prediction_comparisons.dart';
 import 'package:pls_flutter/presentation/models/model_setups.dart';
 import 'package:pls_flutter/presentation/models/pls_task_view.dart';
+import 'package:pls_flutter/presentation/plot/pls_seminr_plot.dart';
 import 'package:pls_flutter/repositories/authentication/auth_repository.dart';
 import 'package:pls_flutter/repositories/authentication/token_repository.dart';
 import 'package:pls_flutter/repositories/pls_gcloud_repository/pls_gcloud_repository.dart';
@@ -31,6 +33,7 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends BaseState<MyHomePage> {
   String? accessToken;
   ConfiguredModel? configuredModel;
+  String? graphvizData;
 
   final List<PlsTask> plsTaskList = [
     PlsTask(
@@ -510,6 +513,21 @@ class _MyHomePageState extends BaseState<MyHomePage> {
     // return Image.memory(bytes).image;
   }
 
+  Future<String?> _getPlotPLSModel() async {
+    if (accessToken == null) return null;
+    if (configuredModel == null) return null;
+    if (configuredModel?.filePath == null) null;
+
+    PlotData? graphvizData = await PLSRepository().getConceptualModelPlot(
+        userToken: accessToken!,
+        filePath: configuredModel!.filePath,
+        instructions: makeInstructions(model: configuredModel!));
+    setState(() {
+      this.graphvizData = graphvizData?.plotData?.join("\n");
+    });
+    return this.graphvizData;
+  }
+
   void onSelectedTask(PlsTask task) async {
     setState(() => selectedTask = task);
     List<Map<String, String>> textToShow = [];
@@ -611,11 +629,6 @@ class _MyHomePageState extends BaseState<MyHomePage> {
                   children: [
                     TextButton(
                         onPressed: () {
-                          _login();
-                        },
-                        child: Text("Login")),
-                    TextButton(
-                        onPressed: () {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
@@ -628,6 +641,46 @@ class _MyHomePageState extends BaseState<MyHomePage> {
                           );
                         },
                         child: Text("Add/Update Dataset")),
+                    ExpansionTile(
+                      initiallyExpanded: true,
+                      title: Text("Plot current model"),
+                      children: [
+                        ListTile(
+                          onTap: () async {
+                            String? plotData = await _getPlotPLSModel();
+                            if (plotData == null) {
+                              debugPrint("No plot data");
+                              return;
+                            }
+                            debugPrint("Plot data: $plotData");
+                            Navigator.of(context).push(MaterialPageRoute(
+                                builder: (context) => PlsSeminrPlot(
+                                      graphVizString: plotData,
+                                      plotProvider: "https://dreampuf.github.io/GraphvizOnline/?engine=dot#",
+                                    )));
+                          },
+                          leading: Icon(Icons.graphic_eq),
+                          title: Text("Editable plot (dreampuf.com)"),
+                        ),
+                        ListTile(
+                          onTap: () async {
+                            String? plotData = await _getPlotPLSModel();
+                            if (plotData == null) {
+                              debugPrint("No plot data");
+                              return;
+                            }
+                            debugPrint("Plot data: $plotData");
+                            Navigator.of(context).push(MaterialPageRoute(
+                                builder: (context) => PlsSeminrPlot(
+                                      graphVizString: plotData,
+                                      plotProvider: "https://quickchart.io/graphviz?graph=",
+                                    )));
+                          },
+                          leading: Icon(Icons.graphic_eq),
+                          title: Text("Read-only plot (quickchart.io)"),
+                        ),
+                      ],
+                    ),
                     Expanded(
                       child: ListView.builder(
                         itemCount: taskGroups.length,

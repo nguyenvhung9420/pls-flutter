@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:pls_flutter/data/models/boostrap_summary.dart';
+import 'package:pls_flutter/data/models/plot_data.dart';
 import 'package:pls_flutter/data/models/predict_models_comparison.dart';
 import 'package:pls_flutter/data/models/predict_summary.dart';
 import 'package:pls_flutter/data/models/seminr_summary.dart';
@@ -20,6 +21,7 @@ class PLSRepository {
   final String generalPrediction = "/predict_summary";
   final String specificEffectSignificance = "/get_specific_effect_significance"; // for Mediation alalysis
   final String plotReliability = "/plot_reliability";
+  final String plotPlsModel = "/plot_pls_model";
   final String summaryRedundancyModelPath = "/model_summary_redundancy";
 
   APIService apiService = APIService(baseUrl: APIDomain.apiDomainUrl);
@@ -242,6 +244,39 @@ class PLSRepository {
 
       Map<String, dynamic> toReturn = jsonDecode(response.toString());
       finalResponse = BootstrapSummary.fromJson(toReturn);
+
+      return finalResponse;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<PlotData?> getConceptualModelPlot(
+      {required String userToken, required String filePath, required String instructions}) async {
+    PlotData? finalResponse;
+    try {
+      final response = await apiService.postWithFile(
+          requestBody: {},
+          filePath: filePath,
+          fileName: 'Corporate_reputation_data.csv',
+          queryParams: {
+            'instructions': instructions,
+            'manual_token': userToken,
+          },
+          urlPath: plotPlsModel);
+
+      // List<String> data = List<String>.from(response);
+
+      // return data.map((x) => x.toString()).toList().join("\n");
+
+      // if (response is List<String>) {
+      //   return response.join("\n");
+      // }
+
+      // return response.toString();
+
+      Map<String, dynamic> toReturn = jsonDecode(response.toString());
+      finalResponse = PlotData.fromJson(toReturn);
 
       return finalResponse;
     } catch (e) {
