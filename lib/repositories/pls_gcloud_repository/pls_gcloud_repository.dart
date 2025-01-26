@@ -13,20 +13,18 @@ class PLSRepository {
   final String healthPath = "/health";
   final String summaryModelPath = "/model_summary";
   final String summaryBootstrapPath = "/bootstrap_summary";
-  final String indicatorWeightsSignificancePath =
-      "/indicator_weights_significance";
+  final String indicatorWeightsSignificancePath = "/indicator_weights_significance";
   final String comparePredictModels = "/compare_predict_models";
   final String analyzeModeration = "/analyze_moderation";
   final String testFileUpload = "/upload";
   final String generalPrediction = "/predict_summary";
-  final String specificEffectSignificance =
-      "/get_specific_effect_significance"; // for Mediation alalysis
+  final String specificEffectSignificance = "/get_specific_effect_significance"; // for Mediation alalysis
   final String plotReliability = "/plot_reliability";
+  final String summaryRedundancyModelPath = "/model_summary_redundancy";
 
   APIService apiService = APIService(baseUrl: APIDomain.apiDomainUrl);
 
-  Future<SeminrSummary?> uploadFile(
-      {required String userToken, required String filePath}) async {
+  Future<SeminrSummary?> uploadFile({required String userToken, required String filePath}) async {
     SeminrSummary? finalResponse;
     try {
       final response = await apiService.postWithFile(
@@ -47,9 +45,7 @@ class PLSRepository {
   }
 
   Future<SeminrSummary?> getSummaryPaths(
-      {required String userToken,
-      required String instructions,
-      required String filePath}) async {
+      {required String userToken, required String instructions, required String filePath}) async {
     SeminrSummary? finalResponse;
     try {
       final response = await apiService.postWithFile(
@@ -72,14 +68,16 @@ class PLSRepository {
     }
   }
 
-  Future<SeminrSummary?> getSummaryPathsSpecificConstruct(
-      {required String userToken, required String constructName}) async {
+  Future<SeminrSummary?> getSummaryRedundancyModel(
+      {required String userToken, required String filePath, required String instructions}) async {
     SeminrSummary? finalResponse;
     try {
-      final response = await apiService.get(queryParams: {
-        'manual_token': userToken,
-        'construct_name': constructName,
-      }, url: summaryModelPath);
+      final response = await apiService.postWithFile(
+          requestBody: {},
+          filePath: filePath,
+          fileName: 'Corporate_reputation_data.csv',
+          queryParams: {'instructions': instructions, 'manual_token': userToken, 'cores_mode': 'parallelDetectCores'},
+          urlPath: summaryRedundancyModelPath);
 
       Map<String, dynamic> toReturn = jsonDecode(response.toString());
       finalResponse = SeminrSummary.fromJson(toReturn);
@@ -91,9 +89,7 @@ class PLSRepository {
   }
 
   Future<BootstrapSummary?> getBoostrapSummary(
-      {required String userToken,
-      required String filePath,
-      required String instructions}) async {
+      {required String userToken, required String filePath, required String instructions}) async {
     BootstrapSummary? finalResponse;
     try {
       final response = await apiService.postWithFile(
@@ -119,9 +115,7 @@ class PLSRepository {
   }
 
   Future<BootstrapSummary?> getSignificanceRelevanceOfIndicatorWeights(
-      {required String userToken,
-      required String filePath,
-      required String instructions}) async {
+      {required String userToken, required String filePath, required String instructions}) async {
     BootstrapSummary? finalResponse;
     try {
       final response = await apiService.postWithFile(
@@ -147,9 +141,7 @@ class PLSRepository {
   }
 
   Future<PredictSummary?> getGeneralPrediction(
-      {required String userToken,
-      required String filePath,
-      required String instructions}) async {
+      {required String userToken, required String filePath, required String instructions}) async {
     PredictSummary? finalResponse;
     try {
       final response = await apiService.postWithFile(
@@ -176,12 +168,18 @@ class PLSRepository {
   }
 
   Future<PredictModelsComparison?> getComparePredictModels(
-      {required String userToken}) async {
+      {required String userToken, required String filePath, required String instructions}) async {
     PredictModelsComparison? finalResponse;
     try {
-      final response = await apiService.get(
-        queryParams: {'manual_token': userToken},
-        url: comparePredictModels,
+      final response = await apiService.postWithFile(
+        requestBody: {},
+        filePath: filePath,
+        fileName: 'Corporate_reputation_data.csv',
+        queryParams: {
+          'instructions': instructions,
+          'manual_token': userToken,
+        },
+        urlPath: comparePredictModels,
       );
 
       Map<String, dynamic> toReturn = jsonDecode(response.toString());
@@ -229,9 +227,7 @@ class PLSRepository {
   }
 
   Future<BootstrapSummary?> getModerationAnalysis(
-      {required String userToken,
-      required String filePath,
-      required String instructions}) async {
+      {required String userToken, required String filePath, required String instructions}) async {
     BootstrapSummary? finalResponse;
     try {
       final response = await apiService.postWithFile(
@@ -254,9 +250,7 @@ class PLSRepository {
   }
 
   Future<dynamic> getPlotReliability(
-      {required String userToken,
-      required String filePath,
-      required String instructions}) async {
+      {required String userToken, required String filePath, required String instructions}) async {
     // Image finalResponse;
 
     try {
@@ -282,14 +276,11 @@ class PLSRepository {
   }
 
   Future<Map<String, dynamic>?> getHealth(
-      {required Map<String, dynamic> healthRequest,
-      required String userToken}) async {
+      {required Map<String, dynamic> healthRequest, required String userToken}) async {
     Map<String, dynamic>? finalResponse;
     try {
-      final response = await apiService.post(
-          queryParams: {'manual_token': userToken},
-          urlPath: healthPath,
-          requestBody: healthRequest);
+      final response = await apiService
+          .post(queryParams: {'manual_token': userToken}, urlPath: healthPath, requestBody: healthRequest);
 
       dynamic res = await response;
       Map<String, dynamic> toReturn = jsonDecode(res.toString());

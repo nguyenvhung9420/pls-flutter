@@ -9,6 +9,8 @@ import 'package:pls_flutter/data/models/seminr_summary.dart';
 import 'package:pls_flutter/data/models/specific_effect_significance.dart';
 import 'package:pls_flutter/presentation/file_chooser/file_chooser_screen.dart';
 import 'package:pls_flutter/presentation/base_state/base_state.dart';
+import 'package:pls_flutter/presentation/home/formative_convergent_validity_screen.dart';
+import 'package:pls_flutter/presentation/home/prediction_comparisons.dart';
 import 'package:pls_flutter/presentation/models/model_setups.dart';
 import 'package:pls_flutter/presentation/models/pls_task_view.dart';
 import 'package:pls_flutter/repositories/authentication/auth_repository.dart';
@@ -34,35 +36,25 @@ class _MyHomePageState extends BaseState<MyHomePage> {
     PlsTask(
       taskCode: 'model_summary',
       name: 'Model Summary',
-      description:
-          'Serve as basis for the assessment of the measurement and structural model',
+      description: 'Serve as basis for the assessment of the measurement and structural model',
     ),
     PlsTask(
       taskCode: 'model_bootstrap_summary',
       name: 'Bootstrap Summary',
-      description:
-          'Perform bootstrapping to estimate standard errors and compute confidence intervals',
+      description: 'Perform bootstrapping to estimate standard errors and compute confidence intervals',
     ),
     PlsTask(
       taskCode: 'indicator_reliability',
       name: 'Indicator reliability',
-      description:
-          'Indicator reliability can be calculated by squaring the loadings.',
+      description: 'Indicator reliability can be calculated by squaring the loadings.',
     ),
     PlsTask(
       taskCode: 'internal_consistency_reliability',
       name: 'Internal consistency reliability',
-      description:
-          'The extent to which indicators measuring the same construct are associated with each other',
+      description: 'The extent to which indicators measuring the same construct are associated with each other',
     ),
-    PlsTask(
-        taskCode: 'convergent_validity',
-        name: 'Convergent Validity',
-        description: 'Description for Item 5'),
-    PlsTask(
-        taskCode: 'discriminant_validity',
-        name: 'Discriminant Validty',
-        description: 'Description for Item 5'),
+    PlsTask(taskCode: 'convergent_validity', name: 'Convergent Validity', description: 'Description for Item 5'),
+    PlsTask(taskCode: 'discriminant_validity', name: 'Discriminant Validty', description: 'Description for Item 5'),
     PlsTask(
         taskCode: 'evaluation_of_formative_basic',
         name: 'Model and measurement details',
@@ -129,10 +121,14 @@ class _MyHomePageState extends BaseState<MyHomePage> {
             'Moderation describes a situation in which the relationship between two constructs is not constant but depends on the values of a third variable, referred to as a moderator variable'),
 
     // Reliability plot
+    PlsTask(taskCode: 'reliability_plot', name: 'Reliability plot', description: 'Reliability plot'),
+
+    // Formative Convergent Validity:
     PlsTask(
-        taskCode: 'reliability_plot',
-        name: 'Reliability plot',
-        description: 'Reliability plot'),
+      taskCode: 'formative_convergent_validity',
+      name: 'Convergent Validity',
+      description: 'Convergent Validity',
+    ),
   ];
 
   String instructions = "";
@@ -149,25 +145,24 @@ class _MyHomePageState extends BaseState<MyHomePage> {
 
     String constructString = constructs.join(", ");
     String pathsString = paths.join(", ");
-    String usingPathWeighting =
-        model.usePathWeighting ? "inner_weights = path_weighting," : "";
+    String usingPathWeighting = model.usePathWeighting ? "inner_weights = path_weighting," : "";
 
     return """corp_rep_mm <- constructs(
-    $constructString
-  )
+            $constructString
+          )
 
-  corp_rep_sm <- relationships(
-    $pathsString
-  )
+          corp_rep_sm <- relationships(
+            $pathsString
+          )
 
-  corp_rep_pls_model <- estimate_pls(
-    data = corp_rep_data,
-    measurement_model = corp_rep_mm,
-    structural_model = corp_rep_sm,
-    $usingPathWeighting
-    missing = mean_replacement,
-    missing_value = "-99"
-  )""";
+          corp_rep_pls_model <- estimate_pls(
+            data = corp_rep_data,
+            measurement_model = corp_rep_mm,
+            structural_model = corp_rep_sm,
+            $usingPathWeighting
+            missing = mean_replacement,
+            missing_value = "-99"
+          )""";
   }
 
   @override
@@ -189,6 +184,7 @@ class _MyHomePageState extends BaseState<MyHomePage> {
       ]),
       TaskGroup('Evaluation of formative measurement models', [
         plsTaskList[6],
+        plsTaskList[17],
         plsTaskList[7],
         plsTaskList[8],
       ]),
@@ -230,8 +226,7 @@ class _MyHomePageState extends BaseState<MyHomePage> {
       return;
     }
 
-    accessToken = await AuthRepository().login(
-        loginBody: {"username": "hungnguyen_pls_sem", "password": "secret"});
+    accessToken = await AuthRepository().login(loginBody: {"username": "hungnguyen_pls_sem", "password": "secret"});
 
     if (accessToken != null) {
       await AuthTokenRepository().saveAuthToken(token: accessToken!);
@@ -300,27 +295,25 @@ class _MyHomePageState extends BaseState<MyHomePage> {
     return [reliability];
   }
 
+  Future<List<Map<String, String>>> _addFormativeConvergentValidity() async {
+    return [];
+  }
+
   Future<List<Map<String, String>>> _addDiscriminantValidity() async {
     if (seminrSummary == null) await _addSummaryPaths();
     if (bootstrapSummary == null) await _addBootstrapSummary();
-    List<Map<String, String>> toReturn =
-        seminrSummary?.validity?.getValidityList() ?? [];
-    toReturn.add({
-      "name": "Bootstraped HTMT",
-      "value": bootstrapSummary?.bootstrappedHtmt?.join("\n") ?? ""
-    });
+    List<Map<String, String>> toReturn = seminrSummary?.validity?.getValidityList() ?? [];
+    toReturn.add({"name": "Bootstraped HTMT", "value": bootstrapSummary?.bootstrappedHtmt?.join("\n") ?? ""});
     return toReturn;
   }
 
   // getSignificanceRelevanceOfIndicatorWeights
-  Future<List<Map<String, String>>>
-      _addSignificanceRelevanceOfIndicatorWeights() async {
+  Future<List<Map<String, String>>> _addSignificanceRelevanceOfIndicatorWeights() async {
     if (configuredModel == null) return [];
     if (configuredModel?.filePath == null) return [];
     if (accessToken == null) return [];
 
-    BootstrapSummary? summary =
-        await PLSRepository().getSignificanceRelevanceOfIndicatorWeights(
+    BootstrapSummary? summary = await PLSRepository().getSignificanceRelevanceOfIndicatorWeights(
       userToken: accessToken!,
       instructions: makeInstructions(model: configuredModel!),
       filePath: configuredModel!.filePath,
@@ -329,15 +322,11 @@ class _MyHomePageState extends BaseState<MyHomePage> {
     return [
       {
         "name": "Bootstraped Weights",
-        "value": significanceRelevanceOfIndicatorWeights?.bootstrappedWeights
-                ?.join("\n") ??
-            "",
+        "value": significanceRelevanceOfIndicatorWeights?.bootstrappedWeights?.join("\n") ?? "",
       },
       {
         "name": "Bootstraped Loadings",
-        "value": significanceRelevanceOfIndicatorWeights?.bootstrappedLoadings
-                ?.join("\n") ??
-            "",
+        "value": significanceRelevanceOfIndicatorWeights?.bootstrappedLoadings?.join("\n") ?? "",
       },
     ];
   }
@@ -357,8 +346,7 @@ class _MyHomePageState extends BaseState<MyHomePage> {
         "value": seminrSummary?.loadingsSquared?.join("\n") ?? "",
       },
       {
-        "name":
-            "Internal consistence reliability and convergent validity - Fornell-Larcker criterion",
+        "name": "Internal consistence reliability and convergent validity - Fornell-Larcker criterion",
         "value": seminrSummary?.validity?.flCriteria?.join("\n") ?? "",
       },
       {
@@ -367,8 +355,7 @@ class _MyHomePageState extends BaseState<MyHomePage> {
         "value": seminrSummary?.validity?.htmt?.join("\n") ?? "",
       },
       {
-        "name":
-            "Internal consistence reliability and convergent validity - Bootstrapped HTMT",
+        "name": "Internal consistence reliability and convergent validity - Bootstrapped HTMT",
         "value": bootstrapSummary?.bootstrappedHtmt?.join("\n") ?? "",
       },
     ];
@@ -398,18 +385,12 @@ class _MyHomePageState extends BaseState<MyHomePage> {
   }
 
   // Significance and relevance of the structural model relationships
-  Future<List<Map<String, String>>>
-      _addSignificanceRelevanceOfRelationships() async {
+  Future<List<Map<String, String>>> _addSignificanceRelevanceOfRelationships() async {
     if (bootstrapSummary == null) await _addBootstrapSummary();
     List<Map<String, String>> toReturn = [];
-    toReturn.add({
-      "name": "Bootstraped Paths",
-      "value": bootstrapSummary?.bootstrappedPaths?.join("\n") ?? ""
-    });
-    toReturn.add({
-      "name": "Bootstraped Total Paths",
-      "value": bootstrapSummary?.bootstrappedTotalPaths?.join("\n") ?? ""
-    });
+    toReturn.add({"name": "Bootstraped Paths", "value": bootstrapSummary?.bootstrappedPaths?.join("\n") ?? ""});
+    toReturn
+        .add({"name": "Bootstraped Total Paths", "value": bootstrapSummary?.bootstrappedTotalPaths?.join("\n") ?? ""});
     return toReturn;
   }
 
@@ -417,12 +398,8 @@ class _MyHomePageState extends BaseState<MyHomePage> {
   Future<List<Map<String, String>>> _addExplanatoryPower() async {
     if (seminrSummary == null) await _addSummaryPaths();
     List<Map<String, String>> toReturn = [];
-    toReturn.add(
-        {"name": "Paths", "value": seminrSummary?.paths?.join("\n") ?? ""});
-    toReturn.add({
-      "name": "F Squared",
-      "value": seminrSummary?.fSquare?.join("\n") ?? ""
-    });
+    toReturn.add({"name": "Paths", "value": seminrSummary?.paths?.join("\n") ?? ""});
+    toReturn.add({"name": "F Squared", "value": seminrSummary?.fSquare?.join("\n") ?? ""});
     return toReturn;
   }
 
@@ -449,15 +426,11 @@ class _MyHomePageState extends BaseState<MyHomePage> {
   // Predictive model comparisons
   Future<List<Map<String, String>>> _addPredictiveModelComparisons() async {
     List<Map<String, String>> toReturn = [];
-
-    PredictModelsComparison? predict =
-        await PLSRepository().getComparePredictModels(userToken: accessToken!);
-
-    toReturn.add({
-      "name": "Predictive model comparisons - itcriteria weights",
-      "value": predict?.itcriteriaVector?.join("\n") ?? ""
-    });
-
+    // PredictModelsComparison? predict = await PLSRepository().getComparePredictModels(userToken: accessToken!);
+    // toReturn.add({
+    //   "name": "Predictive model comparisons - itcriteria weights",
+    //   "value": predict?.itcriteriaVector?.join("\n") ?? ""
+    // });
     return toReturn;
   }
 
@@ -472,8 +445,7 @@ class _MyHomePageState extends BaseState<MyHomePage> {
     if (configuredModel == null) return [];
     if (configuredModel?.filePath == null) return [];
 
-    SpecificEffectSignificance? specificEffectSignificance =
-        await PLSRepository().getSpecificEffectSignificance(
+    SpecificEffectSignificance? specificEffectSignificance = await PLSRepository().getSpecificEffectSignificance(
       userToken: accessToken!,
       instructions: makeInstructions(model: configuredModel!),
       filePath: configuredModel!.filePath,
@@ -481,14 +453,11 @@ class _MyHomePageState extends BaseState<MyHomePage> {
       through: "CUSA",
       to: "CUSL",
     );
-    setState(
-        () => this.specificEffectSignificance = specificEffectSignificance);
+    setState(() => this.specificEffectSignificance = specificEffectSignificance);
     toReturn.add(
       {
         "name": "Specific Effect Significance",
-        "value": specificEffectSignificance?.specificEffectSignificance
-                ?.join("\n") ??
-            "",
+        "value": specificEffectSignificance?.specificEffectSignificance?.join("\n") ?? "",
       },
     );
     toReturn.add({
@@ -568,6 +537,9 @@ class _MyHomePageState extends BaseState<MyHomePage> {
       case 'evaluation_of_formative_basic':
         textToShow = await _addReflectiveMeasurementModelEval();
         break;
+      case 'formative_convergent_validity':
+        textToShow = await _addFormativeConvergentValidity();
+        break;
       case 'formative_indicator_collinearity':
         textToShow = await _addFormativeIndicatorCollinear();
         break;
@@ -587,7 +559,7 @@ class _MyHomePageState extends BaseState<MyHomePage> {
         textToShow = await _addGeneralModelPrediction();
         break;
       case 'predict_models_comparisons':
-        textToShow = await _addPredictiveModelComparisons();
+        // textToShow = await _addPredictiveModelComparisons();
         break;
       case 'mediation_analysis':
         textToShow = await _addMediationAnalysis();
@@ -597,12 +569,13 @@ class _MyHomePageState extends BaseState<MyHomePage> {
         break;
       case 'reliability_plot':
         dataBytes = await _getPlotReliability();
-        setState(() {});
+        // setState(() {});
         break;
       default:
         textToShow = [];
     }
     setState(() => textDataToShow = textToShow);
+    setState(() {});
     disableLoading();
   }
 
@@ -647,8 +620,7 @@ class _MyHomePageState extends BaseState<MyHomePage> {
                             context,
                             MaterialPageRoute(
                                 builder: (context) => FileChooserScreen(
-                                      onDoneWithModelSetup:
-                                          (ConfiguredModel model) {
+                                      onDoneWithModelSetup: (ConfiguredModel model) {
                                         _saveModelSetup(model);
                                       },
                                       configuredModel: configuredModel,
@@ -688,44 +660,53 @@ class _MyHomePageState extends BaseState<MyHomePage> {
                 }
                 return Flexible(
                   flex: orientation == Orientation.portrait ? 2 : 3,
-                  child: ListView(
-                    children: [
-                      Text(
-                        selectedTask?.name ?? "",
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                      Text(
-                        selectedTask?.description ?? "",
-                        style: Theme.of(context).textTheme.titleSmall,
-                      ),
-                      ListView.builder(
-                          primary: false,
-                          shrinkWrap: true,
-                          itemCount: textDataToShow.length,
-                          itemBuilder: (context, index) {
-                            switch (selectedTask?.taskCode) {
-                              case 'reliability_plot':
-                              default:
-                                return Card(
-                                  child: ListTile(
-                                    title: Text(
-                                      textDataToShow[index]["name"] ?? "",
-                                      style: TextStyle(
-                                          fontFamily: GoogleFonts.robotoMono()
-                                              .fontFamily),
-                                    ),
-                                    subtitle: Text(
-                                      textDataToShow[index]["value"] ?? "",
-                                      style: TextStyle(
-                                          fontFamily: GoogleFonts.robotoMono()
-                                              .fontFamily),
-                                    ),
-                                  ),
-                                );
-                            }
-                          }),
-                    ],
-                  ),
+                  child: Builder(builder: (context) {
+                    switch (selectedTask?.taskCode) {
+                      case 'formative_convergent_validity':
+                        if (configuredModel == null) {
+                          return Container();
+                        }
+                        return FormativeConvergentValidityScreen(filePath: configuredModel!.filePath);
+                      case 'predict_models_comparisons':
+                        if (accessToken == null) {
+                          return Container();
+                        }
+                        return ComparePredictionsScreen(
+                          accessToken: accessToken!,
+                          configuredModel: configuredModel,
+                          onDoneWithModelSetup: (ConfiguredModel model) {},
+                        );
+                      default:
+                        return ListView(
+                          children: [
+                            Text(
+                              selectedTask?.name ?? "",
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
+                            Text(
+                              selectedTask?.description ?? "",
+                              style: Theme.of(context).textTheme.titleSmall,
+                            ),
+                            ListView.builder(
+                                primary: false,
+                                shrinkWrap: true,
+                                itemCount: textDataToShow.length,
+                                itemBuilder: (context, index) => Card(
+                                      child: ListTile(
+                                        title: Text(
+                                          textDataToShow[index]["name"] ?? "",
+                                          style: TextStyle(fontFamily: GoogleFonts.robotoMono().fontFamily),
+                                        ),
+                                        subtitle: Text(
+                                          textDataToShow[index]["value"] ?? "",
+                                          style: TextStyle(fontFamily: GoogleFonts.robotoMono().fontFamily),
+                                        ),
+                                      ),
+                                    )),
+                          ],
+                        );
+                    }
+                  }),
                 );
               }),
             ],

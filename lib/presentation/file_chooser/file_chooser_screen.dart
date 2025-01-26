@@ -4,6 +4,7 @@ import 'package:pls_flutter/presentation/base_state/base_state.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'package:file_picker/file_picker.dart';
+import 'package:pls_flutter/presentation/base_state/pls_textfield.dart';
 import 'package:pls_flutter/presentation/models/model_setups.dart';
 import 'package:pls_flutter/repositories/authentication/token_repository.dart';
 import 'package:pls_flutter/repositories/prepared_setups/prepared_setups.dart';
@@ -12,10 +13,7 @@ import 'package:pls_flutter/utils/theme_constant.dart';
 class FileChooserScreen extends StatefulWidget {
   final Function(ConfiguredModel) onDoneWithModelSetup;
   final ConfiguredModel? configuredModel;
-  const FileChooserScreen(
-      {super.key,
-      required this.onDoneWithModelSetup,
-      required this.configuredModel});
+  const FileChooserScreen({super.key, required this.onDoneWithModelSetup, required this.configuredModel});
 
   @override
   State<FileChooserScreen> createState() => _FileChooserScreenState();
@@ -86,8 +84,7 @@ class _FileChooserScreenState extends BaseState<FileChooserScreen> {
 
   Future<void> _processFile(String? filePath) async {
     final input = File(filePath!).openRead();
-    final List<String> fields =
-        await input.transform(utf8.decoder).transform(LineSplitter()).toList();
+    final List<String> fields = await input.transform(utf8.decoder).transform(LineSplitter()).toList();
 
     List<List<dynamic>> data = fields.map((String element) {
       return element.split(_fieldDelimiter!);
@@ -130,10 +127,8 @@ class _FileChooserScreenState extends BaseState<FileChooserScreen> {
   int? pathIndexInEditing;
 
   List<String> possibleCompositeNames() {
-    List<String> normalComposites = composites
-        .map((Composite e) => e.name ?? "")
-        .where((String element) => element.isNotEmpty)
-        .toList();
+    List<String> normalComposites =
+        composites.map((Composite e) => e.name ?? "").where((String element) => element.isNotEmpty).toList();
     return normalComposites;
   }
 
@@ -190,8 +185,7 @@ class _FileChooserScreenState extends BaseState<FileChooserScreen> {
                   //     _fieldDelimiter != null ? () => _testPickFile() : null,
                   child: const Text("Upload File"),
                 ),
-                Text(
-                    "Columns: ${_data.isNotEmpty ? _data.first.length : 0}, Rows: ${_data.length}"),
+                Text("Columns: ${_data.isNotEmpty ? _data.first.length : 0}, Rows: ${_data.length}"),
                 Expanded(
                   child: _data.isEmpty
                       ? const Center(child: Text("No data yet"))
@@ -206,8 +200,7 @@ class _FileChooserScreenState extends BaseState<FileChooserScreen> {
                                 child: DataTable(
                                   columnSpacing: 12,
                                   decoration: BoxDecoration(
-                                      color:
-                                          const Color.fromARGB(255, 76, 64, 64),
+                                      color: const Color.fromARGB(255, 76, 64, 64),
                                       border: Border.all(color: Colors.black)),
                                   columns: _buildColumns(), // <--- columns
                                   rows: _buildRows(), // <--- rows
@@ -220,30 +213,22 @@ class _FileChooserScreenState extends BaseState<FileChooserScreen> {
                 Card(
                   child: Padding(
                     padding: ThemeConstant.padding8(),
-                    child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
+                    child:
+                        Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+                      Text("Do you want to load predefined setups for 'Corporate Reputation Data'?"),
+                      Row(
                         children: [
-                          Text(
-                              "Do you want to load predefined setups for 'Corporate Reputation Data'?"),
-                          Row(
-                            children: [
-                              TextButton(
-                                  onPressed: () =>
-                                      _populateDataFromModel(corpDataModel),
-                                  child: Text("Load basic setup")),
-                              TextButton(
-                                  onPressed: () =>
-                                      _populateDataFromModel(corpDataModelExt),
-                                  child: Text("Load extended setup")),
-                              TextButton(
-                                  onPressed: () => _populateDataFromModel(
-                                      corpDataModelExtModeration),
-                                  child: Text(
-                                      "Load extended setup with Moderation Analysis")),
-                            ],
-                          )
-                        ]),
+                          TextButton(
+                              onPressed: () => _populateDataFromModel(corpDataModel), child: Text("Load basic setup")),
+                          TextButton(
+                              onPressed: () => _populateDataFromModel(corpDataModelExt),
+                              child: Text("Load extended setup")),
+                          TextButton(
+                              onPressed: () => _populateDataFromModel(corpDataModelExtModeration),
+                              child: Text("Load extended setup with Moderation Analysis")),
+                        ],
+                      )
+                    ]),
                   ),
                 ),
                 Row(children: [
@@ -254,8 +239,7 @@ class _FileChooserScreenState extends BaseState<FileChooserScreen> {
                           name: "[No Name]",
                           weight: null,
                           singleItem: null,
-                          multiItem:
-                              MultiItem(prefix: "construction", from: 1, to: 1),
+                          multiItem: MultiItem(prefix: "construction", from: 1, to: 1),
                           isMulti: true,
                           isInteractionTerm: false,
                           iv: null,
@@ -283,9 +267,8 @@ class _FileChooserScreenState extends BaseState<FileChooserScreen> {
                       child: Card(
                         shape: RoundedRectangleBorder(
                           side: BorderSide(
-                            color: compositeIndexInEditing == index
-                                ? Theme.of(context).primaryColor
-                                : Colors.transparent,
+                            color:
+                                compositeIndexInEditing == index ? Theme.of(context).primaryColor : Colors.transparent,
                             width: 2,
                           ),
                           borderRadius: BorderRadius.circular(12),
@@ -295,8 +278,7 @@ class _FileChooserScreenState extends BaseState<FileChooserScreen> {
                           child: Row(
                             children: [
                               Builder(builder: (context) {
-                                String finalString =
-                                    makeCompositeCommandString(index);
+                                String finalString = makeCompositeCommandString(index);
                                 return Text(finalString);
                               }),
                               Spacer(),
@@ -345,9 +327,7 @@ class _FileChooserScreenState extends BaseState<FileChooserScreen> {
                       child: Card(
                         shape: RoundedRectangleBorder(
                           side: BorderSide(
-                            color: pathIndexInEditing == index
-                                ? Theme.of(context).primaryColor
-                                : Colors.transparent,
+                            color: pathIndexInEditing == index ? Theme.of(context).primaryColor : Colors.transparent,
                             width: 2,
                           ),
                           borderRadius: BorderRadius.circular(12),
@@ -380,15 +360,13 @@ class _FileChooserScreenState extends BaseState<FileChooserScreen> {
                 : ListView(
                     padding: ThemeConstant.padding8(),
                     children: [
-                      Text(
-                          'Construct ${composites[compositeIndexInEditing!].name ?? "Untitled"}'),
+                      Text('Construct ${composites[compositeIndexInEditing!].name ?? "Untitled"}'),
                       ThemeConstant.sizedBox16,
                       PLSTextField(
                         controller: _nameController,
                         labelText: "Construct Name",
                         onChanged: (String newVal) {
-                          setState(() => composites[compositeIndexInEditing!]
-                              .name = newVal.toUpperCase());
+                          setState(() => composites[compositeIndexInEditing!].name = newVal.toUpperCase());
                         },
                       ),
                       ThemeConstant.sizedBox8,
@@ -398,13 +376,9 @@ class _FileChooserScreenState extends BaseState<FileChooserScreen> {
                         children: [
                           Text("Use mode B for weight?"),
                           Switch(
-                            value:
-                                composites[compositeIndexInEditing!].weight ==
-                                    "mode_B",
+                            value: composites[compositeIndexInEditing!].weight == "mode_B",
                             onChanged: (bool value) {
-                              setState(() =>
-                                  composites[compositeIndexInEditing!].weight =
-                                      value ? "mode_B" : null);
+                              setState(() => composites[compositeIndexInEditing!].weight = value ? "mode_B" : null);
                             },
                           ),
                         ],
@@ -415,15 +389,11 @@ class _FileChooserScreenState extends BaseState<FileChooserScreen> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           // interaction_term(iv = "CUSA", moderator = "SC", method = two_stage))
-                          Text(
-                              "Is this an interaction term (for Moderation analysis)?"),
+                          Text("Is this an interaction term (for Moderation analysis)?"),
                           Switch(
-                            value: composites[compositeIndexInEditing!]
-                                .isInteractionTerm,
+                            value: composites[compositeIndexInEditing!].isInteractionTerm,
                             onChanged: (bool value) {
-                              setState(() =>
-                                  composites[compositeIndexInEditing!]
-                                      .isInteractionTerm = value);
+                              setState(() => composites[compositeIndexInEditing!].isInteractionTerm = value);
                             },
                           ),
                         ],
@@ -437,97 +407,73 @@ class _FileChooserScreenState extends BaseState<FileChooserScreen> {
                           Switch(
                             value: composites[compositeIndexInEditing!].isMulti,
                             onChanged: (bool value) {
-                              setState(() =>
-                                  composites[compositeIndexInEditing!].isMulti =
-                                      value);
+                              setState(() => composites[compositeIndexInEditing!].isMulti = value);
                             },
                           ),
                         ],
                       ),
                       ThemeConstant.sizedBox8,
                       Builder(builder: (ctx) {
-                        if (composites[compositeIndexInEditing!]
-                            .isInteractionTerm) {
-                          return Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                PLSTextField(
-                                  controller: _prefixController,
-                                  labelText: "Independent Variable (IV)",
-                                  hintText: 'e.g. "CUSA"',
-                                  onChanged: (String newVal) {
-                                    setState(() {
-                                      composites[compositeIndexInEditing!].iv =
-                                          newVal;
-                                      composites[compositeIndexInEditing!]
-                                              .name =
-                                          '${composites[compositeIndexInEditing!].iv}*${composites[compositeIndexInEditing!].moderator}';
-                                    });
-                                    _nameController.text =
-                                        composites[compositeIndexInEditing!]
-                                                .name ??
-                                            "";
-                                  },
-                                ),
-                                ThemeConstant.sizedBox8,
-                                PLSTextField(
-                                  controller: _fromController,
-                                  labelText: "Moderator",
-                                  onChanged: (String newVal) {
-                                    setState(() {
-                                      composites[compositeIndexInEditing!]
-                                          .moderator = newVal;
-                                      composites[compositeIndexInEditing!]
-                                              .name =
-                                          '${composites[compositeIndexInEditing!].iv}*${composites[compositeIndexInEditing!].moderator}';
+                        if (composites[compositeIndexInEditing!].isInteractionTerm) {
+                          return Column(mainAxisSize: MainAxisSize.min, children: [
+                            PLSTextField(
+                              controller: _prefixController,
+                              labelText: "Independent Variable (IV)",
+                              hintText: 'e.g. "CUSA"',
+                              onChanged: (String newVal) {
+                                setState(() {
+                                  composites[compositeIndexInEditing!].iv = newVal;
+                                  composites[compositeIndexInEditing!].name =
+                                      '${composites[compositeIndexInEditing!].iv}*${composites[compositeIndexInEditing!].moderator}';
+                                });
+                                _nameController.text = composites[compositeIndexInEditing!].name ?? "";
+                              },
+                            ),
+                            ThemeConstant.sizedBox8,
+                            PLSTextField(
+                              controller: _fromController,
+                              labelText: "Moderator",
+                              onChanged: (String newVal) {
+                                setState(() {
+                                  composites[compositeIndexInEditing!].moderator = newVal;
+                                  composites[compositeIndexInEditing!].name =
+                                      '${composites[compositeIndexInEditing!].iv}*${composites[compositeIndexInEditing!].moderator}';
 
-                                      _nameController.text =
-                                          composites[compositeIndexInEditing!]
-                                                  .name ??
-                                              "";
-                                    });
-                                  },
-                                ),
-                              ]);
+                                  _nameController.text = composites[compositeIndexInEditing!].name ?? "";
+                                });
+                              },
+                            ),
+                          ]);
                         }
 
                         if (composites[compositeIndexInEditing!].isMulti) {
-                          return Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                PLSTextField(
-                                  controller: _prefixController,
-                                  labelText: "Prefix",
-                                  hintText: 'e.g. "cusl_"',
-                                  onChanged: (String newVal) {
-                                    setState(() =>
-                                        composites[compositeIndexInEditing!]
-                                            .multiItem
-                                            ?.prefix = newVal);
-                                  },
-                                ),
-                                ThemeConstant.sizedBox8,
-                                PLSTextField(
-                                  controller: _fromController,
-                                  labelText: "From",
-                                  onChanged: (String newVal) {
-                                    setState(() =>
-                                        composites[compositeIndexInEditing!]
-                                            .multiItem
-                                            ?.from = int.parse(newVal));
-                                  },
-                                ),
-                                ThemeConstant.sizedBox8,
-                                PLSTextField(
-                                    controller: _toController,
-                                    labelText: "To",
-                                    onChanged: (String newVal) {
-                                      setState(() =>
-                                          composites[compositeIndexInEditing!]
-                                              .multiItem
-                                              ?.to = int.parse(newVal));
-                                    })
-                              ]);
+                          return Column(mainAxisSize: MainAxisSize.min, children: [
+                            PLSTextField(
+                              controller: _prefixController,
+                              labelText: "Prefix",
+                              hintText: 'e.g. "cusl_"',
+                              onChanged: (String newVal) {
+                                setState(() => composites[compositeIndexInEditing!].multiItem?.prefix = newVal);
+                              },
+                            ),
+                            ThemeConstant.sizedBox8,
+                            PLSTextField(
+                              controller: _fromController,
+                              labelText: "From",
+                              onChanged: (String newVal) {
+                                setState(
+                                    () => composites[compositeIndexInEditing!].multiItem?.from = int.parse(newVal));
+                              },
+                            ),
+                            ThemeConstant.sizedBox8,
+                            PLSTextField(
+                                controller: _toController,
+                                labelText: "To",
+                                onChanged: (String newVal) {
+                                  setState(
+                                      () => composites[compositeIndexInEditing!].multiItem?.to = int.parse(newVal));
+                                })
+                          ]);
                         }
                         return Column(
                           mainAxisSize: MainAxisSize.min,
@@ -539,9 +485,7 @@ class _FileChooserScreenState extends BaseState<FileChooserScreen> {
                               controller: _singleItemController,
                               labelText: "Variable Name",
                               onChanged: (String newVal) {
-                                setState(() =>
-                                    composites[compositeIndexInEditing!]
-                                        .singleItem = newVal);
+                                setState(() => composites[compositeIndexInEditing!].singleItem = newVal);
                               },
                             ),
                           ],
@@ -580,29 +524,21 @@ class _FileChooserScreenState extends BaseState<FileChooserScreen> {
                     children: [
                       Text("From"),
                       Builder(builder: (context) {
-                        int compositeNamesCount =
-                            possibleCompositeNames().length;
+                        int compositeNamesCount = possibleCompositeNames().length;
                         return Wrap(
                           spacing: 5.0,
                           children: List<Widget>.generate(
                             compositeNamesCount,
                             (int index) {
-                              String compositeName =
-                                  possibleCompositeNames()[index];
+                              String compositeName = possibleCompositeNames()[index];
                               return ChoiceChip(
                                 label: Text(possibleCompositeNames()[index]),
-                                selected: paths[pathIndexInEditing!]
-                                    .from
-                                    .contains(compositeName),
+                                selected: paths[pathIndexInEditing!].from.contains(compositeName),
                                 onSelected: (bool selected) {
                                   if (selected == false) {
-                                    paths[pathIndexInEditing!]
-                                        .from
-                                        .remove(compositeName);
+                                    paths[pathIndexInEditing!].from.remove(compositeName);
                                   } else {
-                                    paths[pathIndexInEditing!]
-                                        .from
-                                        .add(compositeName);
+                                    paths[pathIndexInEditing!].from.add(compositeName);
                                   }
                                   setState(() {});
                                 },
@@ -613,29 +549,21 @@ class _FileChooserScreenState extends BaseState<FileChooserScreen> {
                       }),
                       Text("To"),
                       Builder(builder: (context) {
-                        int compositeNamesCount =
-                            possibleCompositeNames().length;
+                        int compositeNamesCount = possibleCompositeNames().length;
                         return Wrap(
                           spacing: 5.0,
                           children: List<Widget>.generate(
                             compositeNamesCount,
                             (int index) {
-                              String compositeName =
-                                  possibleCompositeNames()[index];
+                              String compositeName = possibleCompositeNames()[index];
                               return ChoiceChip(
                                 label: Text(possibleCompositeNames()[index]),
-                                selected: paths[pathIndexInEditing!]
-                                    .to
-                                    .contains(compositeName),
+                                selected: paths[pathIndexInEditing!].to.contains(compositeName),
                                 onSelected: (bool selected) {
                                   if (selected == false) {
-                                    paths[pathIndexInEditing!]
-                                        .to
-                                        .remove(compositeName);
+                                    paths[pathIndexInEditing!].to.remove(compositeName);
                                   } else {
-                                    paths[pathIndexInEditing!]
-                                        .to
-                                        .add(compositeName);
+                                    paths[pathIndexInEditing!].to.add(compositeName);
                                   }
                                   setState(() {});
                                 },
@@ -670,25 +598,4 @@ class _FileChooserScreenState extends BaseState<FileChooserScreen> {
   String makeCompositeCommandString(int index) {
     return composites[index].makeCompositeCommandString();
   }
-}
-
-TextField PLSTextField({
-  required TextEditingController controller,
-  String labelText = "label",
-  String? hintText = "hint",
-  required Function(String) onChanged,
-}) {
-  return TextField(
-    controller: controller,
-    decoration: InputDecoration(
-      labelText: labelText,
-      hintText: hintText,
-      hintStyle: TextStyle(color: Colors.grey),
-      filled: true,
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-    ),
-    onChanged: (String newVal) {
-      onChanged(newVal);
-    },
-  );
 }
