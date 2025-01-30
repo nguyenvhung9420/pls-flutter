@@ -10,7 +10,7 @@ abstract class BaseState<T extends StatefulWidget> extends State<T> {
     return _isLoading;
   }
 
-  void setIsLoading({required bool isLoading}) {
+  void setIsLoading({required bool isLoading}) { 
     setState(() => _isLoading = isLoading);
   }
 
@@ -57,6 +57,24 @@ abstract class BaseState<T extends StatefulWidget> extends State<T> {
   void showSnackBar({required dynamic message, IconData? iconData}) {
     SnackBar snackBar = SnackBar(showCloseIcon: true, content: Text(message.toString()));
     ScaffoldMessenger.of(context).showSnackBar(snackBar);
+  }
+
+  
+  void showBottomSheet(
+      {required Widget child,
+      required BuildContext context,
+      double proportionWithSreenHeight = 0.75,
+      Color backgroundColor = Colors.white}) {
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (BuildContext context) {
+        return Container(
+          height: MediaQuery.of(context).size.height * proportionWithSreenHeight,
+          color: backgroundColor,
+          child: child,
+        );
+      },
+    );
   }
 
   void showLoadingIndicatorHud([String? text]) {

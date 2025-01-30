@@ -1,5 +1,5 @@
 name: pls_flutter
-description: "A new Flutter project."
+description: "A Flutter project as POC of PLS-SEM on mobile"
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -44,6 +44,7 @@ dependencies:
   open_file: ^3.3.2
   intl: ^0.20.1
   webview_flutter: ^4.10.0
+  change_app_package_name: ^1.4.0
 
 dev_dependencies:
   flutter_test:

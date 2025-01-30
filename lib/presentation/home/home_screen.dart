@@ -19,6 +19,7 @@ import 'package:pls_flutter/repositories/authentication/auth_repository.dart';
 import 'package:pls_flutter/repositories/authentication/token_repository.dart';
 import 'package:pls_flutter/repositories/pls_gcloud_repository/pls_gcloud_repository.dart';
 import 'package:device_type/device_type.dart';
+import 'package:pls_flutter/utils/theme_constant.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 class MyHomePage extends StatefulWidget {
@@ -745,14 +746,21 @@ class _MyHomePageState extends BaseState<MyHomePage> {
                                 shrinkWrap: true,
                                 itemCount: textDataToShow.length,
                                 itemBuilder: (context, index) => Card(
-                                      child: ListTile(
-                                        title: Text(
-                                          textDataToShow[index]["name"] ?? "",
-                                          style: TextStyle(fontFamily: GoogleFonts.robotoMono().fontFamily),
-                                        ),
-                                        subtitle: Text(
-                                          textDataToShow[index]["value"] ?? "",
-                                          style: TextStyle(fontFamily: GoogleFonts.robotoMono().fontFamily),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                      margin: EdgeInsets.only(top: 0, left: 8, right: 8, bottom: 16),
+                                      elevation: 2,
+                                      shadowColor: Colors.black.withOpacity(0.2),
+                                      child: Padding(
+                                        padding: ThemeConstant.padding8(),
+                                        child: ListTile(
+                                          title: Text(
+                                            textDataToShow[index]["name"] ?? "",
+                                            style: TextStyle(fontFamily: GoogleFonts.robotoMono().fontFamily),
+                                          ),
+                                          subtitle: Text(
+                                            textDataToShow[index]["value"] ?? "",
+                                            style: TextStyle(fontFamily: GoogleFonts.robotoMono().fontFamily),
+                                          ),
                                         ),
                                       ),
                                     )),
