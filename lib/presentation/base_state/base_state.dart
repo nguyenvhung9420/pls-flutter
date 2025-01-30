@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 
 abstract class BaseState<T extends StatefulWidget> extends State<T> {
   bool _isLoading = false;
@@ -10,7 +11,7 @@ abstract class BaseState<T extends StatefulWidget> extends State<T> {
     return _isLoading;
   }
 
-  void setIsLoading({required bool isLoading}) { 
+  void setIsLoading({required bool isLoading}) {
     setState(() => _isLoading = isLoading);
   }
 
@@ -59,19 +60,27 @@ abstract class BaseState<T extends StatefulWidget> extends State<T> {
     ScaffoldMessenger.of(context).showSnackBar(snackBar);
   }
 
-  
-  void showBottomSheet(
+  void showBaseBottomSheet(
       {required Widget child,
       required BuildContext context,
       double proportionWithSreenHeight = 0.75,
-      Color backgroundColor = Colors.white}) {
-    showModalBottomSheet<void>(
+      Color? backgroundColor}) {
+    showMaterialModalBottomSheet<void>(
       context: context,
       builder: (BuildContext context) {
         return Container(
           height: MediaQuery.of(context).size.height * proportionWithSreenHeight,
           color: backgroundColor,
-          child: child,
+          child: Stack(
+            alignment: Alignment.topRight,
+            children: [
+              child,
+              IconButton(
+                onPressed: () => Navigator.pop(context),
+                icon: Icon(Icons.close),
+              ),
+            ],
+          ),
         );
       },
     );
