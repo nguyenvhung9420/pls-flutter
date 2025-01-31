@@ -19,6 +19,7 @@ import 'package:pls_flutter/repositories/authentication/auth_repository.dart';
 import 'package:pls_flutter/repositories/authentication/token_repository.dart';
 import 'package:pls_flutter/repositories/pls_gcloud_repository/pls_gcloud_repository.dart';
 import 'package:device_type/device_type.dart';
+import 'package:pls_flutter/utils/theme_constant.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 class MyHomePage extends StatefulWidget {
@@ -528,7 +529,7 @@ class _MyHomePageState extends BaseState<MyHomePage> {
     return this.graphvizData;
   }
 
-  void onSelectedTask(PlsTask task) async {
+  void onSelectedTask({required PlsTask task, required bool isOnPhone}) async {
     setState(() => selectedTask = task);
     List<Map<String, String>> textToShow = [];
 
@@ -595,6 +596,14 @@ class _MyHomePageState extends BaseState<MyHomePage> {
     setState(() => textDataToShow = textToShow);
     setState(() {});
     disableLoading();
+
+    if (isOnPhone) {
+      showBaseBottomSheet(
+        proportionWithSreenHeight: 0.9,
+        context: context,
+        child: buildCalculationResult(),
+      );
+    }
   }
 
   String _getDeviceType(BuildContext context) {
@@ -602,10 +611,7 @@ class _MyHomePageState extends BaseState<MyHomePage> {
   }
 
   void _saveModelSetup(ConfiguredModel model) async {
-    // _uploadFile(model.filePath);
-    enableLoading();
     setState(() => configuredModel = model);
-    disableLoading();
   }
 
   @override
@@ -614,8 +620,8 @@ class _MyHomePageState extends BaseState<MyHomePage> {
 
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(deviceType),
+        elevation: 1,
         bottom: defaultLinearProgressBar(context),
       ),
       body: OrientationBuilder(
@@ -628,138 +634,93 @@ class _MyHomePageState extends BaseState<MyHomePage> {
                   mainAxisSize: MainAxisSize.max,
                   children: [
                     TextButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => FileChooserScreen(
-                                      onDoneWithModelSetup: (ConfiguredModel model) {
-                                        _saveModelSetup(model);
-                                      },
-                                      configuredModel: configuredModel,
-                                    )),
-                          );
-                        },
-                        child: Text("Add/Update Dataset")),
-                    ExpansionTile(
-                      initiallyExpanded: true,
-                      title: Text("Plot current model"),
-                      children: [
-                        ListTile(
-                          onTap: () async {
-                            String? plotData = await _getPlotPLSModel();
-                            if (plotData == null) {
-                              debugPrint("No plot data");
-                              return;
-                            }
-                            debugPrint("Plot data: $plotData");
-                            Navigator.of(context).push(MaterialPageRoute(
-                                builder: (context) => PlsSeminrPlot(
-                                      graphVizString: plotData,
-                                      plotProvider: "https://dreampuf.github.io/GraphvizOnline/?engine=dot#",
-                                    )));
-                          },
-                          leading: Icon(Icons.graphic_eq),
-                          title: Text("Editable plot (dreampuf.com)"),
-                        ),
-                        ListTile(
-                          onTap: () async {
-                            String? plotData = await _getPlotPLSModel();
-                            if (plotData == null) {
-                              debugPrint("No plot data");
-                              return;
-                            }
-                            debugPrint("Plot data: $plotData");
-                            Navigator.of(context).push(MaterialPageRoute(
-                                builder: (context) => PlsSeminrPlot(
-                                      graphVizString: plotData,
-                                      plotProvider: "https://quickchart.io/graphviz?graph=",
-                                    )));
-                          },
-                          leading: Icon(Icons.graphic_eq),
-                          title: Text("Read-only plot (quickchart.io)"),
-                        ),
-                      ],
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => FileChooserScreen(
+                                    onDoneWithModelSetup: (ConfiguredModel model) => _saveModelSetup(model),
+                                    configuredModel: configuredModel,
+                                  )),
+                        );
+                      },
+                      child: Text("Add/Update Dataset"),
                     ),
+                    configuredModel == null
+                        ? Container()
+                        : ExpansionTile(
+                            initiallyExpanded: false,
+                            title: Text("Plot current model"),
+                            children: [
+                              ListTile(
+                                onTap: () async {
+                                  String? plotData = await _getPlotPLSModel();
+                                  if (plotData == null) {
+                                    debugPrint("No plot data");
+                                    return;
+                                  }
+                                  debugPrint("Plot data: $plotData");
+                                  Navigator.of(context).push(MaterialPageRoute(
+                                      builder: (context) => PlsSeminrPlot(
+                                            graphVizString: plotData,
+                                            plotProvider: "https://dreampuf.github.io/GraphvizOnline/?engine=dot#",
+                                          )));
+                                },
+                                leading: Icon(Icons.graphic_eq),
+                                title: Text("Editable plot (dreampuf.com)"),
+                              ),
+                              ListTile(
+                                onTap: () async {
+                                  String? plotData = await _getPlotPLSModel();
+                                  if (plotData == null) {
+                                    debugPrint("No plot data");
+                                    return;
+                                  }
+                                  debugPrint("Plot data: $plotData");
+                                  Navigator.of(context).push(MaterialPageRoute(
+                                      builder: (context) => PlsSeminrPlot(
+                                            graphVizString: plotData,
+                                            plotProvider: "https://quickchart.io/graphviz?graph=",
+                                          )));
+                                },
+                                leading: Icon(Icons.graphic_eq),
+                                title: Text("Read-only plot (quickchart.io)"),
+                              ),
+                            ],
+                          ),
                     Expanded(
-                      child: ListView.builder(
-                        itemCount: taskGroups.length,
-                        itemBuilder: (context, index) {
-                          final group = taskGroups[index];
-                          return ExpansionTile(
-                            initiallyExpanded: true,
-                            title: Text(group.name),
-                            children: group.tasks.map((PlsTask task) {
-                              return ListTile(
-                                onTap: () => onSelectedTask(task),
-                                leading: Icon(Icons.task),
-                                title: Text(task.name),
-                              );
-                            }).toList(),
-                          );
-                        },
-                      ),
+                      child: configuredModel == null
+                          ? Padding(
+                              padding: ThemeConstant.padding16(),
+                              child: Text("Please add a data set and build its models first"))
+                          : ListView.builder(
+                              itemCount: taskGroups.length,
+                              itemBuilder: (context, index) {
+                                final group = taskGroups[index];
+                                return ExpansionTile(
+                                  initiallyExpanded: true,
+                                  title: Text(group.name),
+                                  children: group.tasks.map((PlsTask task) {
+                                    return ListTile(
+                                      onTap: () => onSelectedTask(task: task, isOnPhone: deviceType != "Tablet"),
+                                      leading: Icon(Icons.task),
+                                      title: Text(task.name),
+                                    );
+                                  }).toList(),
+                                );
+                              },
+                            ),
                     ),
                   ],
                 ),
               ),
               Builder(builder: (context) {
                 if (deviceType != "Tablet") {
-                  if (orientation == Orientation.landscape) {
-                    // Allow to go on
-                  } else {
-                    return Container();
-                  }
+                  return Container();
                 }
                 return Flexible(
                   flex: orientation == Orientation.portrait ? 2 : 3,
-                  child: Builder(builder: (context) {
-                    switch (selectedTask?.taskCode) {
-                      case 'formative_convergent_validity':
-                        if (configuredModel == null) {
-                          return Container();
-                        }
-                        return FormativeConvergentValidityScreen(filePath: configuredModel!.filePath);
-                      case 'predict_models_comparisons':
-                        if (accessToken == null) {
-                          return Container();
-                        }
-                        return ComparePredictionsScreen(
-                          accessToken: accessToken!,
-                          configuredModel: configuredModel,
-                          onDoneWithModelSetup: (ConfiguredModel model) {},
-                        );
-                      default:
-                        return ListView(
-                          children: [
-                            Text(
-                              selectedTask?.name ?? "",
-                              style: Theme.of(context).textTheme.titleMedium,
-                            ),
-                            Text(
-                              selectedTask?.description ?? "",
-                              style: Theme.of(context).textTheme.titleSmall,
-                            ),
-                            ListView.builder(
-                                primary: false,
-                                shrinkWrap: true,
-                                itemCount: textDataToShow.length,
-                                itemBuilder: (context, index) => Card(
-                                      child: ListTile(
-                                        title: Text(
-                                          textDataToShow[index]["name"] ?? "",
-                                          style: TextStyle(fontFamily: GoogleFonts.robotoMono().fontFamily),
-                                        ),
-                                        subtitle: Text(
-                                          textDataToShow[index]["value"] ?? "",
-                                          style: TextStyle(fontFamily: GoogleFonts.robotoMono().fontFamily),
-                                        ),
-                                      ),
-                                    )),
-                          ],
-                        );
-                    }
-                  }),
+                  child: buildCalculationResult(),
                 );
               }),
             ],
@@ -767,5 +728,63 @@ class _MyHomePageState extends BaseState<MyHomePage> {
         },
       ),
     );
+  }
+
+  Widget buildCalculationResult() {
+    return Builder(builder: (context) {
+      switch (selectedTask?.taskCode) {
+        case 'formative_convergent_validity':
+          if (configuredModel == null) {
+            return Container();
+          }
+          return FormativeConvergentValidityScreen(filePath: configuredModel!.filePath);
+        case 'predict_models_comparisons':
+          if (accessToken == null) {
+            return Container();
+          }
+          return ComparePredictionsScreen(
+            accessToken: accessToken!,
+            configuredModel: configuredModel,
+            onDoneWithModelSetup: (ConfiguredModel model) {},
+          );
+        default:
+          return ListView(
+            padding: ThemeConstant.padding16(),
+            children: [
+              Text(
+                selectedTask?.name ?? "",
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              Text(
+                selectedTask?.description ?? "",
+                style: Theme.of(context).textTheme.titleSmall,
+              ),
+              ListView.builder(
+                  primary: false,
+                  shrinkWrap: true,
+                  itemCount: textDataToShow.length,
+                  itemBuilder: (context, index) => Card(
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        margin: EdgeInsets.only(top: 0, left: 0, right: 0, bottom: 16),
+                        elevation: 2,
+                        shadowColor: Colors.black.withOpacity(0.2),
+                        child: Padding(
+                          padding: ThemeConstant.padding8(),
+                          child: ListTile(
+                            title: Text(
+                              textDataToShow[index]["name"] ?? "",
+                              style: TextStyle(fontFamily: GoogleFonts.robotoMono().fontFamily),
+                            ),
+                            subtitle: Text(
+                              textDataToShow[index]["value"] ?? "",
+                              style: TextStyle(fontFamily: GoogleFonts.robotoMono().fontFamily),
+                            ),
+                          ),
+                        ),
+                      )),
+            ],
+          );
+      }
+    });
   }
 }

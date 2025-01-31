@@ -10,10 +10,10 @@ class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   ThemeData lightTheme(BuildContext context) => ThemeData(
-        // useMaterial3: false,
-        fontFamily: GoogleFonts.inter().fontFamily,
-        appBarTheme: AppBarTheme(backgroundColor: Colors.white),
-        scaffoldBackgroundColor: const Color(0xFFF7F2EF),
+        useMaterial3: false,
+        fontFamily: GoogleFonts.rubik().fontFamily,
+        // appBarTheme: AppBarTheme(backgroundColor: Colors.white),
+        // scaffoldBackgroundColor: const Color(0xFFF7F2EF),
         colorScheme: const ColorScheme.light(
           primary: Color(0xFFF50057),
           // primary: Colors.red,
