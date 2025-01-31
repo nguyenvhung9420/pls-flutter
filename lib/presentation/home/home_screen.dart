@@ -242,6 +242,7 @@ class _MyHomePageState extends BaseState<MyHomePage> {
     if (accessToken == null) return [];
     if (configuredModel == null) return [];
     if (configuredModel?.filePath == null) return [];
+    if (seminrSummary?.getSummaryList().isNotEmpty ?? false) return seminrSummary?.getSummaryList() ?? [];
 
     SeminrSummary? summary = await PLSRepository().getSummaryPaths(
       userToken: accessToken!,
@@ -256,6 +257,9 @@ class _MyHomePageState extends BaseState<MyHomePage> {
     if (accessToken == null) return [];
     if (configuredModel == null) return [];
     if (configuredModel?.filePath == null) return [];
+    if (bootstrapSummary?.getBootstrapSummaryList().isNotEmpty ?? false) {
+      return bootstrapSummary?.getBootstrapSummaryList() ?? [];
+    }
 
     BootstrapSummary? summary = await PLSRepository().getBoostrapSummary(
       userToken: accessToken!,
@@ -337,8 +341,8 @@ class _MyHomePageState extends BaseState<MyHomePage> {
 
   //Reflective Measurement Model Evaluation
   Future<List<Map<String, String>>> _addReflectiveMeasurementModelEval() async {
-    await _addSummaryPaths();
-    await _addBootstrapSummary();
+    if (seminrSummary == null) await _addSummaryPaths();
+    if (bootstrapSummary == null) await _addBootstrapSummary();
 
     List<Map<String, String>> toReturn = [
       {
@@ -430,11 +434,6 @@ class _MyHomePageState extends BaseState<MyHomePage> {
   // Predictive model comparisons
   Future<List<Map<String, String>>> _addPredictiveModelComparisons() async {
     List<Map<String, String>> toReturn = [];
-    // PredictModelsComparison? predict = await PLSRepository().getComparePredictModels(userToken: accessToken!);
-    // toReturn.add({
-    //   "name": "Predictive model comparisons - itcriteria weights",
-    //   "value": predict?.itcriteriaVector?.join("\n") ?? ""
-    // });
     return toReturn;
   }
 
@@ -604,6 +603,8 @@ class _MyHomePageState extends BaseState<MyHomePage> {
         child: buildCalculationResult(),
       );
     }
+
+    showSnackBar(message: "${task.name} calculated!");
   }
 
   String _getDeviceType(BuildContext context) {
@@ -632,19 +633,27 @@ class _MyHomePageState extends BaseState<MyHomePage> {
                 flex: 1,
                 child: Column(
                   mainAxisSize: MainAxisSize.max,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    TextButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => FileChooserScreen(
-                                    onDoneWithModelSetup: (ConfiguredModel model) => _saveModelSetup(model),
-                                    configuredModel: configuredModel,
-                                  )),
-                        );
-                      },
-                      child: Text("Add/Update Dataset"),
+                    Padding(
+                      padding: ThemeConstant.padding8(),
+                      child: SizedBox(
+                        height: 52,
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => FileChooserScreen(
+                                        onDoneWithModelSetup: (ConfiguredModel model) => _saveModelSetup(model),
+                                        configuredModel: configuredModel,
+                                      )),
+                            );
+                          },
+                          icon: Icon(Icons.document_scanner_outlined),
+                          label: Text(configuredModel == null ? "Add Dataset" : "Update Dataset"),
+                        ),
+                      ),
                     ),
                     configuredModel == null
                         ? Container()

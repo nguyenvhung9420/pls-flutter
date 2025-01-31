@@ -41,8 +41,8 @@ abstract class BaseState<T extends StatefulWidget> extends State<T> {
         ? PreferredSize(
             preferredSize: Size.fromHeight(6.0),
             child: LinearProgressIndicator(
-              backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.3),
-              valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.primary),
+              backgroundColor: Theme.of(context).colorScheme.secondary.withOpacity(0.3),
+              valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.secondary),
             ),
           )
         : null;
