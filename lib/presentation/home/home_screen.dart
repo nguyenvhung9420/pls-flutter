@@ -398,12 +398,6 @@ class _MyHomePageState extends BaseState<MyHomePage> {
     ];
   }
 
-  // Predictive model comparisons
-  Future<List<Map<String, String>>> _addPredictiveModelComparisons() async {
-    List<Map<String, String>> toReturn = [];
-    return toReturn;
-  }
-
   Future<List<Map<String, String>>> _addModerationAnalysis() async {
     if (accessToken == null) return [];
     if (configuredModel == null) return [];
