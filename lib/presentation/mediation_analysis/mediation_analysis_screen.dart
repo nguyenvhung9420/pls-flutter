@@ -75,12 +75,8 @@ class _MediationAnalysisScreenState extends BaseState<MediationAnalysisScreen> {
     // _calculate();
   }
 
-  void _calculate() async {
-    await Future.wait<void>(mediationInputs.map((MediationInput element) {
-      return (() async =>
-          await _addMediationAnalysisPerSignificance(from: element.from, to: element.to, through: element.through))();
-      // return _addMediationAnalysisPerSignificance(from: element.from, to: element.to, through: element.through);
-    }));
+  void _calculate({required MediationInput element}) async {
+    await _addMediationAnalysisPerSignificance(from: element.from, to: element.to, through: element.through);
   }
 
   void _addMediationAnalysisGeneral() {
@@ -128,6 +124,7 @@ class _MediationAnalysisScreenState extends BaseState<MediationAnalysisScreen> {
       through: through,
       to: to,
     );
+    specificEffectSignificance?.forInput = MediationInput(from: from, to: to, through: through);
     mediationPerSignificance.add(specificEffectSignificance);
     setState(() {});
     disableLoading();
@@ -144,192 +141,259 @@ class _MediationAnalysisScreenState extends BaseState<MediationAnalysisScreen> {
     return normalComposites;
   }
 
-  Widget predefinedInvitation() => Card(
+  Widget predefinedInvitation() => Container(
+      decoration: BoxDecoration(
+        border: Border.all(color: Theme.of(context).colorScheme.primary, width: 1),
+        borderRadius: BorderRadius.circular(12),
+        color: Theme.of(context).colorScheme.primary.withOpacity(0.03),
+      ),
       child: Padding(
-          padding: ThemeConstant.padding8(),
+          padding: ThemeConstant.padding16(),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
             Text("Do you want to load predefined Specific effect significances for 'Corporate Reputation Data'?"),
             Row(
               children: [
-                TextButton(onPressed: () => _populateDataFromModel(), child: Text("Load Predefined")),
+                Spacer(),
+                TextButton(
+                    onPressed: () => _populateDataFromModel(),
+                    child: Text("Load Predefined", style: TextStyle(fontWeight: FontWeight.bold))),
               ],
             )
           ])));
-
-  Widget loadingNotice() => isLoading
-      ? Card(
-          child: Padding(
-              padding: ThemeConstant.padding8(),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-                Text("Mediation analysis can take up to more than 2 minutes to complete. Please be patient."),
-              ])))
-      : Container();
 
   @override
   Widget build(BuildContext context) {
     return ListView(
       padding: ThemeConstant.padding16(),
       children: [
-        Text("Moderation Analysis"),
-        SizedBox(height: 24),
-        Row(children: [
-          Text("Specific effect significances"),
-          Spacer(),
-          ElevatedButton(onPressed: () => _addItem(), child: Text("+ Add")),
-        ]),
-        predefinedInvitation(),
-        ListView.builder(
-          shrinkWrap: true,
-          primary: false,
-          itemCount: mediationInputs.length,
-          itemBuilder: (BuildContext context, int index) {
-            return Card(
-              shape: RoundedRectangleBorder(
-                side: BorderSide(
-                  color: mediationInputInEditing == index ? Theme.of(context).primaryColor : Colors.transparent,
-                  width: 2,
-                ),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Wrap(
-                  children: [
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Text("From"),
-                        SizedBox(width: 8),
-                        Expanded(
-                          child: DropdownButton<String>(
-                            isExpanded: true,
-                            value: mediationInputs[index].from,
-                            items: possibleCompositeNames()
-                                .map((name) => DropdownMenuItem(value: name, child: Text(name)))
-                                .toList(),
-                            onChanged: (value) {
-                              setState(() {
-                                mediationInputs[index].from = value!;
-                              });
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(width: 16),
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Text("Through"),
-                        SizedBox(width: 8),
-                        Expanded(
-                          child: DropdownButton<String>(
-                            isExpanded: true,
-                            value: mediationInputs[index].through,
-                            items: possibleCompositeNames()
-                                .map((name) => DropdownMenuItem(
-                                      value: name,
-                                      child: Text(name),
-                                    ))
-                                .toList(),
-                            onChanged: (value) {
-                              setState(() {
-                                mediationInputs[index].through = value!;
-                              });
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(width: 16),
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Text("To"),
-                        SizedBox(width: 8),
-                        Expanded(
-                          child: DropdownButton<String>(
-                            isExpanded: true,
-                            value: mediationInputs[index].to,
-                            items: possibleCompositeNames()
-                                .map((name) => DropdownMenuItem(
-                                      value: name,
-                                      child: Text(name),
-                                    ))
-                                .toList(),
-                            onChanged: (value) {
-                              setState(() {
-                                mediationInputs[index].to = value!;
-                              });
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
+        Padding(
+          padding: ThemeConstant.padding8(horizontal: false, vertical: true),
+          child: Text(
+            "Moderation Analysis",
+            style: TextStyle(fontSize: Theme.of(context).textTheme.titleLarge?.fontSize, fontWeight: FontWeight.bold),
+          ),
         ),
-        loadingNotice(),
-        Row(children: [
-          ElevatedButton(
-            onPressed: () => mediationInputs.isNotEmpty ? _calculate() : null,
-            child: Text("Calculate"),
+        SizedBox(height: 24),
+        makeSection([
+          Row(children: [
+            Text(
+              "Specific effect significances".toUpperCase(),
+              style: TextStyle(
+                  color: Theme.of(context).colorScheme.primaryContainer,
+                  fontSize: Theme.of(context).textTheme.bodySmall?.fontSize,
+                  fontWeight: FontWeight.w600),
+            ),
+            Spacer(),
+            TextButton(onPressed: () => _addItem(), child: Text("+ Add")),
+          ]),
+          predefinedInvitation(),
+          ListView.builder(
+            shrinkWrap: true,
+            primary: false,
+            padding: EdgeInsets.zero,
+            itemCount: mediationInputs.length,
+            itemBuilder: (BuildContext context, int index) {
+              return Card(
+                margin: EdgeInsets.symmetric(vertical: 8.0),
+                shape: RoundedRectangleBorder(
+                  side: BorderSide(
+                      color: mediationInputInEditing == index
+                          ? Theme.of(context).primaryColor
+                          : Colors.black.withOpacity(0.1),
+                      width: 1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 2,
+                shadowColor: Colors.black.withOpacity(0.2),
+                child: Padding(
+                  padding: ThemeConstant.padding16(),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Wrap(
+                        children: [
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Text("From"),
+                              SizedBox(width: 8),
+                              Expanded(
+                                child: DropdownButton<String>(
+                                  isExpanded: true,
+                                  value: mediationInputs[index].from,
+                                  items: possibleCompositeNames()
+                                      .map((name) => DropdownMenuItem(value: name, child: Text(name)))
+                                      .toList(),
+                                  onChanged: (value) {
+                                    setState(() {
+                                      mediationInputs[index].from = value!;
+                                    });
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(width: 16),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Text("Through"),
+                              SizedBox(width: 8),
+                              Expanded(
+                                child: DropdownButton<String>(
+                                  isExpanded: true,
+                                  value: mediationInputs[index].through,
+                                  items: possibleCompositeNames()
+                                      .map((name) => DropdownMenuItem(
+                                            value: name,
+                                            child: Text(name),
+                                          ))
+                                      .toList(),
+                                  onChanged: (value) {
+                                    setState(() {
+                                      mediationInputs[index].through = value!;
+                                    });
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(width: 16),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Text("To"),
+                              SizedBox(width: 8),
+                              Expanded(
+                                child: DropdownButton<String>(
+                                  isExpanded: true,
+                                  value: mediationInputs[index].to,
+                                  items: possibleCompositeNames()
+                                      .map((name) => DropdownMenuItem(
+                                            value: name,
+                                            child: Text(name),
+                                          ))
+                                      .toList(),
+                                  onChanged: (value) {
+                                    setState(() {
+                                      mediationInputs[index].to = value!;
+                                    });
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          TextButton(
+                              onPressed: () {
+                                _calculate(element: mediationInputs[index]);
+                              },
+                              child: Text("Calculate", style: TextStyle(fontWeight: FontWeight.bold))),
+                          SizedBox(width: 24),
+                          TextButton(
+                              onPressed: () {
+                                mediationInputs.removeAt(index);
+                                setState(() {});
+                              },
+                              child: Text("Delete")),
+                        ],
+                      )
+                    ],
+                  ),
+                ),
+              );
+            },
           ),
         ]),
-        Text("Specific effect significance analysis"),
-        ListView.builder(
-            padding: EdgeInsets.zero,
-            primary: false,
-            shrinkWrap: true,
-            itemCount: mediationPerSignificance.length,
-            itemBuilder: (context, index) => Card(
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  elevation: 2,
-                  shadowColor: Colors.black.withOpacity(0.2),
-                  child: Padding(
-                    padding: ThemeConstant.padding8(),
-                    child: ListTile(
-                      title: Text(
-                        "Specific effect significance",
-                        style: TextStyle(fontFamily: GoogleFonts.robotoMono().fontFamily),
-                      ),
-                      subtitle: Text(
-                        mediationPerSignificance[index]?.specificEffectSignificance?.join("\n") ?? "",
-                        style: TextStyle(fontFamily: GoogleFonts.robotoMono().fontFamily),
+        ThemeConstant.sizedBox16,
+        makeSection([
+          Text(
+            "Specific effect significance analysis".toUpperCase(),
+            style: TextStyle(
+                color: Theme.of(context).colorScheme.primaryContainer,
+                fontSize: Theme.of(context).textTheme.bodySmall?.fontSize,
+                fontWeight: FontWeight.w600),
+          ),
+          loadingNotice(),
+          mediationPerSignificance.isEmpty
+              ? Container(
+                  padding: ThemeConstant.padding16(),
+                  child: Text(
+                    "Please press Calculate on each mediation input to calculate specific effect significance",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                )
+              : ListView.builder(
+                  padding: EdgeInsets.zero,
+                  primary: false,
+                  shrinkWrap: true,
+                  itemCount: mediationPerSignificance.length,
+                  itemBuilder: (context, index) => Card(
+                        margin: EdgeInsets.symmetric(vertical: 8.0),
+                        shape: RoundedRectangleBorder(
+                            side: BorderSide(color: Colors.black.withOpacity(0.1), width: 1),
+                            borderRadius: BorderRadius.circular(12)),
+                        elevation: 2,
+                        shadowColor: Colors.black.withOpacity(0.2),
+                        child: Padding(
+                          padding: ThemeConstant.padding8(),
+                          child: ListTile(
+                            title: Text(
+                              mediationPerSignificance[index]?.getForInput() ?? "Specific effect significance",
+                              style: TextStyle(fontFamily: GoogleFonts.robotoMono().fontFamily),
+                            ),
+                            subtitle: Text(
+                              mediationPerSignificance[index]?.specificEffectSignificance?.join("\n") ?? "",
+                              style: TextStyle(fontFamily: GoogleFonts.robotoMono().fontFamily),
+                            ),
+                          ),
+                        ),
+                      )),
+        ]),
+        ThemeConstant.sizedBox16,
+        makeSection([
+          Text(
+            "Paths and Bootstrapped Paths (for reference)".toUpperCase(),
+            style: TextStyle(
+                color: Theme.of(context).colorScheme.primaryContainer,
+                fontSize: Theme.of(context).textTheme.bodySmall?.fontSize,
+                fontWeight: FontWeight.w600),
+          ),
+          ListView.builder(
+              padding: EdgeInsets.zero,
+              primary: false,
+              shrinkWrap: true,
+              itemCount: mediationGeneral.length,
+              itemBuilder: (context, index) => Card(
+                    margin: EdgeInsets.symmetric(vertical: 8.0),
+                    shape: RoundedRectangleBorder(
+                        side: BorderSide(color: Colors.black.withOpacity(0.1), width: 1),
+                        borderRadius: BorderRadius.circular(12)),
+                    elevation: 2,
+                    shadowColor: Colors.black.withOpacity(0.2),
+                    child: Padding(
+                      padding: ThemeConstant.padding8(),
+                      child: ListTile(
+                        title: Text(
+                          mediationGeneral[index]["name"] ?? "",
+                          style: TextStyle(fontFamily: GoogleFonts.robotoMono().fontFamily),
+                        ),
+                        subtitle: Text(
+                          mediationGeneral[index]["value"] ?? "",
+                          style: TextStyle(fontFamily: GoogleFonts.robotoMono().fontFamily),
+                        ),
                       ),
                     ),
-                  ),
-                )),
-        Text("Paths and Bootstrapped Paths (for reference)"),
-        ListView.builder(
-            padding: EdgeInsets.zero,
-            primary: false,
-            shrinkWrap: true,
-            itemCount: mediationGeneral.length,
-            itemBuilder: (context, index) => Card(
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  elevation: 2,
-                  shadowColor: Colors.black.withOpacity(0.2),
-                  child: Padding(
-                    padding: ThemeConstant.padding8(),
-                    child: ListTile(
-                      title: Text(
-                        mediationGeneral[index]["name"] ?? "",
-                        style: TextStyle(fontFamily: GoogleFonts.robotoMono().fontFamily),
-                      ),
-                      subtitle: Text(
-                        mediationGeneral[index]["value"] ?? "",
-                        style: TextStyle(fontFamily: GoogleFonts.robotoMono().fontFamily),
-                      ),
-                    ),
-                  ),
-                ))
+                  ))
+        ])
       ],
     );
   }

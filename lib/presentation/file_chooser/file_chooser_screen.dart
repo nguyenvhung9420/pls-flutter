@@ -139,20 +139,6 @@ class _FileChooserScreenState extends BaseState<FileChooserScreen> {
     Navigator.of(context).pop();
   }
 
-  Widget makeSection(List<Widget> children) {
-    return Container(
-        padding: ThemeConstant.padding16(),
-        decoration: BoxDecoration(
-          color: Colors.black.withOpacity(0.04),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: children,
-        ));
-  }
-
   void openEndDrawer() {
     _key.currentState?.openEndDrawer();
   }

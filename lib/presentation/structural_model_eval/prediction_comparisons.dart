@@ -27,6 +27,7 @@ class ComparePredictionsScreen extends StatefulWidget {
 }
 
 class _ComparePredictionsScreenState extends BaseState<ComparePredictionsScreen> {
+  final GlobalKey<ScaffoldState> _key = GlobalKey(); // Create a key
   String? filePath;
   List<Composite> composites = [];
   List<List<RelationshipPath>> paths = [];
@@ -79,10 +80,27 @@ class _ComparePredictionsScreenState extends BaseState<ComparePredictionsScreen>
   final TextEditingController _compareToController = TextEditingController();
 
   void makeComparison() async {
+    if (compareFrom.isEmpty || compareTo.isEmpty) {
+      showAlertView(
+          title: "Missing Values",
+          body: "Please fill in 'Compare From' and 'Compare To' text fields.",
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text("OK"),
+            ),
+          ]);
+      return;
+    }
+
     if (filePath == null) {
       debugPrint(">>> filePath is null");
       return;
     }
+
+    enableLoading();
 
     // getComparePredictModels:
     PredictModelsComparison? predict = await PLSRepository().getComparePredictModels(
@@ -91,454 +109,483 @@ class _ComparePredictionsScreenState extends BaseState<ComparePredictionsScreen>
       instructions: makePredictComparisonCommandString(),
     );
     Map<String, dynamic> toReturn = {
-      "name": "Predictive model comparisons - itcriteria weights",
+      "name": "Predictive model comparisons",
       "value": predict?.itcriteriaVector?.join("\n") ?? ""
     };
     comparisonResults = toReturn;
     setState(() {});
+    disableLoading();
+  }
+
+  void openEndDrawer() {
+    _key.currentState?.openEndDrawer();
+  }
+
+  void closeEndDrawer() {
+    _key.currentState?.closeEndDrawer();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        // LEFT SIDE
-        Flexible(
-          flex: 3,
-          child: ListView(
-            padding: const EdgeInsets.all(16),
+    return Scaffold(
+      key: _key,
+      body: Stack(
+        alignment: Alignment.topRight,
+        children: [
+          ListView(
+            // main content
+            padding: EdgeInsets.fromLTRB(16, MediaQuery.of(context).viewPadding.top, 16, 16),
             children: [
-              ListView(
-                shrinkWrap: true,
-                primary: false,
-                children: [
-                  Text("Variables to compare"),
-                  ThemeConstant.sizedBox16,
-                  SizedBox(
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text("From"),
-                        SizedBox(
-                          height: 70,
-                          width: 200,
-                          child: PLSTextField(
-                            controller: _compareFromController,
-                            labelText: "Compare from",
-                            hintText: 'e.g. "BIC"',
-                            onChanged: (String newVal) {
-                              setState(() {
-                                compareFrom = newVal;
-                              });
-                            },
+              makeBottomSheetTitle("Make Prediction Models"),
+              SizedBox(height: 24),
+              makeSection([
+                makeSectionTitle("Variables to compare"),
+                ThemeConstant.sizedBox16,
+                PLSTextField(
+                    controller: _compareFromController,
+                    labelText: "Compare from",
+                    hintText: 'e.g. "BIC"',
+                    onChanged: (String newVal) {
+                      setState(() {
+                        compareFrom = newVal;
+                      });
+                    }),
+                ThemeConstant.sizedBox8,
+                PLSTextField(
+                  controller: _compareToController,
+                  labelText: "Compare with",
+                  hintText: 'e.g. "CUSA"',
+                  onChanged: (String newVal) {
+                    setState(() {
+                      compareTo = newVal;
+                    });
+                  },
+                ),
+              ]),
+              ThemeConstant.sizedBox16,
+              makeSection([
+                Row(children: [
+                  makeSectionTitle("Measurement model"),
+                  Spacer(),
+                  TextButton(
+                      onPressed: () {
+                        composites.add(Composite(
+                          name: "[No Name]",
+                          weight: null,
+                          singleItem: null,
+                          multiItem: MultiItem(prefix: "construction", from: 1, to: 1),
+                          isMulti: true,
+                          isInteractionTerm: false,
+                          iv: null,
+                          moderator: null,
+                        ));
+                        compositeIndexInEditing = composites.length - 1;
+                        pathIndexInEditing = null;
+                        setState(() {});
+                      },
+                      child: Text("+ Add Construct")),
+                ]),
+                ListView.builder(
+                  padding: EdgeInsets.zero,
+                  shrinkWrap: true,
+                  primary: false,
+                  itemCount: composites.length,
+                  itemBuilder: (BuildContext context, int index) {
+                    return InkWell(
+                      onTap: () {
+                        setState(() {
+                          pathIndexInEditing = null;
+                          compositeIndexInEditing = index;
+                        });
+                        populateTextFieldsFromComposite(index);
+                        openEndDrawer();
+                      },
+                      child: Card(
+                        shape: RoundedRectangleBorder(
+                          side: BorderSide(
+                            color:
+                                compositeIndexInEditing == index ? Theme.of(context).primaryColor : Colors.transparent,
+                            width: 2,
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Builder(builder: (context) {
+                                  String finalString = makeCompositeCommandString(index);
+                                  return Text(
+                                    finalString,
+                                    style: TextStyle(fontFamily: GoogleFonts.robotoMono().fontFamily),
+                                  );
+                                }),
+                              ),
+                              Icon(Icons.edit),
+                            ],
                           ),
                         ),
-                        Text("To"),
-                        SizedBox(
-                          height: 70,
-                          width: 200,
-                          child: PLSTextField(
-                            controller: _compareToController,
-                            labelText: "Compare with",
-                            hintText: 'e.g. "CUSA"',
-                            onChanged: (String newVal) {
-                              setState(() {
-                                compareTo = newVal;
-                              });
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              Row(children: [
-                Text("Measurement model"),
-                TextButton(
-                    onPressed: () {
-                      composites.add(Composite(
-                        name: "[No Name]",
-                        weight: null,
-                        singleItem: null,
-                        multiItem: MultiItem(prefix: "construction", from: 1, to: 1),
-                        isMulti: true,
-                        isInteractionTerm: false,
-                        iv: null,
-                        moderator: null,
-                      ));
-                      compositeIndexInEditing = composites.length - 1;
-                      pathIndexInEditing = null;
-                      setState(() {});
-                    },
-                    child: Text("Add Construct")),
+                      ),
+                    );
+                  },
+                ),
               ]),
               ListView.builder(
-                shrinkWrap: true,
-                primary: false,
-                itemCount: composites.length,
-                itemBuilder: (BuildContext context, int index) {
-                  return InkWell(
-                    onTap: () {
-                      setState(() {
-                        pathIndexInEditing = null;
-                        compositeIndexInEditing = index;
-                      });
-                      populateTextFieldsFromComposite(index);
-                    },
-                    child: Card(
-                      shape: RoundedRectangleBorder(
-                        side: BorderSide(
-                          color: compositeIndexInEditing == index ? Theme.of(context).primaryColor : Colors.transparent,
-                          width: 2,
-                        ),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Row(
-                          children: [
-                            Builder(builder: (context) {
-                              String finalString = makeCompositeCommandString(index);
-                              return Text(finalString);
-                            }),
-                            Spacer(),
-                            Icon(Icons.edit),
-                          ],
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-              ListView.builder(
+                padding: EdgeInsets.zero,
                 shrinkWrap: true,
                 primary: false,
                 itemCount: paths.length,
                 itemBuilder: (BuildContext context, int index) {
-                  return eachPathEditting(index);
+                  return eachPathEditing(index);
                 },
               ),
-              Row(
-                children: [
-                  TextButton.icon(
-                    onPressed: () {
-                      List<RelationshipPath> newPathSet = [];
-                      // paths.last.forEach((RelationshipPath element) {
-                      //   newPathSet.add(element);
-                      // });
-                      setState(() {
-                        paths.add(newPathSet);
-                        pathIndexInEditing = null;
-                      });
-                    },
-                    icon: Icon(Icons.add),
-                    label: Text("Add more Structual Model"),
-                  ),
-                ],
+              TextButton.icon(
+                onPressed: () {
+                  List<RelationshipPath> newPathSet = [];
+                  // paths.last.forEach((RelationshipPath element) {
+                  //   newPathSet.add(element);
+                  // });
+                  setState(() {
+                    paths.add(newPathSet);
+                    pathIndexInEditing = null;
+                  });
+                },
+                icon: Icon(Icons.add),
+                label: Text("Add more Structural Model"),
               ),
-              Center(
-                child: ElevatedButton(
-                  onPressed: () {
-                    String commandString = makePredictComparisonCommandString();
-                    debugPrint(commandString);
-                    makeComparison();
-                  },
-                  child: Text("Start Compare"),
-                ),
-              ),
-              if (comparisonResults.isNotEmpty)
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "Comparison Results",
+              isLoading
+                  ? loadingNotice()
+                  : Center(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          String commandString = makePredictComparisonCommandString();
+                          debugPrint(commandString);
+                          makeComparison();
+                        },
+                        child: Text("Start Compare"),
+                      ),
                     ),
-                    SizedBox(height: 10),
-                    Text(
-                      comparisonResults["name"] ?? "",
-                    ),
-                    SizedBox(height: 5),
-                    Text(
-                      comparisonResults["value"] ?? "",
-                    ),
-                  ],
-                ),
+              ThemeConstant.sizedBox16,
+              comparisonResults.isNotEmpty
+                  ? makeSection(
+                      [
+                        makeSectionTitle("Comparison Results"),
+                        ThemeConstant.sizedBox8,
+                        Text((comparisonResults["name"] ?? "") +
+                            " in Information Theoretic model selection criteria (IT Criteria)"),
+                        SizedBox(height: 8),
+                        Text(
+                          comparisonResults["value"] ?? "",
+                          style: TextStyle(fontFamily: GoogleFonts.robotoMono().fontFamily),
+                        ),
+                      ],
+                    )
+                  : Container(),
+              SizedBox(height: 80),
             ],
           ),
-        ),
-        // COMPOSITE EDITING
-        Flexible(
-          flex: compositeIndexInEditing == null ? 0 : 1,
-          child: compositeIndexInEditing == null
-              ? Container()
-              : ListView(
-                  padding: ThemeConstant.padding8(),
-                  children: [
-                    Text('Construct ${composites[compositeIndexInEditing!].name ?? "Untitled"}'),
-                    ThemeConstant.sizedBox16,
-                    PLSTextField(
-                      controller: _nameController,
-                      labelText: "Construct Name",
-                      onChanged: (String newVal) {
-                        setState(() => composites[compositeIndexInEditing!].name = newVal.toUpperCase());
-                      },
-                    ),
-                    ThemeConstant.sizedBox8,
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text("Use mode B for weight?"),
-                        Switch(
-                          value: composites[compositeIndexInEditing!].weight == "mode_B",
-                          onChanged: (bool value) {
-                            setState(() => composites[compositeIndexInEditing!].weight = value ? "mode_B" : null);
-                          },
-                        ),
-                      ],
-                    ),
-                    ThemeConstant.sizedBox8,
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        // interaction_term(iv = "CUSA", moderator = "SC", method = two_stage))
-                        Text("Is this an interaction term (for Moderation analysis)?"),
-                        Switch(
-                          value: composites[compositeIndexInEditing!].isInteractionTerm,
-                          onChanged: (bool value) {
-                            setState(() => composites[compositeIndexInEditing!].isInteractionTerm = value);
-                          },
-                        ),
-                      ],
-                    ),
-                    ThemeConstant.sizedBox8,
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text("Is this a multi item?"),
-                        Switch(
-                          value: composites[compositeIndexInEditing!].isMulti,
-                          onChanged: (bool value) {
-                            setState(() => composites[compositeIndexInEditing!].isMulti = value);
-                          },
-                        ),
-                      ],
-                    ),
-                    ThemeConstant.sizedBox8,
-                    Builder(builder: (ctx) {
-                      if (composites[compositeIndexInEditing!].isInteractionTerm) {
-                        return Column(mainAxisSize: MainAxisSize.min, children: [
-                          PLSTextField(
-                            controller: _prefixController,
-                            labelText: "Independent Variable (IV)",
-                            hintText: 'e.g. "CUSA"',
-                            onChanged: (String newVal) {
-                              setState(() {
-                                composites[compositeIndexInEditing!].iv = newVal;
-                                composites[compositeIndexInEditing!].name =
-                                    '${composites[compositeIndexInEditing!].iv}*${composites[compositeIndexInEditing!].moderator}';
-                              });
-                              _nameController.text = composites[compositeIndexInEditing!].name ?? "";
-                            },
-                          ),
-                          ThemeConstant.sizedBox8,
-                          PLSTextField(
-                            controller: _fromController,
-                            labelText: "Moderator",
-                            onChanged: (String newVal) {
-                              setState(() {
-                                composites[compositeIndexInEditing!].moderator = newVal;
-                                composites[compositeIndexInEditing!].name =
-                                    '${composites[compositeIndexInEditing!].iv}*${composites[compositeIndexInEditing!].moderator}';
-
-                                _nameController.text = composites[compositeIndexInEditing!].name ?? "";
-                              });
-                            },
-                          ),
-                        ]);
-                      }
-
-                      if (composites[compositeIndexInEditing!].isMulti) {
-                        return Column(mainAxisSize: MainAxisSize.min, children: [
-                          PLSTextField(
-                            controller: _prefixController,
-                            labelText: "Prefix",
-                            hintText: 'e.g. "cusl_"',
-                            onChanged: (String newVal) {
-                              setState(() => composites[compositeIndexInEditing!].multiItem?.prefix = newVal);
-                            },
-                          ),
-                          ThemeConstant.sizedBox8,
-                          PLSTextField(
-                            controller: _fromController,
-                            labelText: "From",
-                            onChanged: (String newVal) {
-                              setState(() => composites[compositeIndexInEditing!].multiItem?.from = int.parse(newVal));
-                            },
-                          ),
-                          ThemeConstant.sizedBox8,
-                          PLSTextField(
-                              controller: _toController,
-                              labelText: "To",
-                              onChanged: (String newVal) {
-                                setState(() => composites[compositeIndexInEditing!].multiItem?.to = int.parse(newVal));
-                              })
-                        ]);
-                      }
-                      return Column(
-                        mainAxisSize: MainAxisSize.min,
+          InkWell(
+            onTap: () => Navigator.of(context).pop(),
+            child: Container(
+              alignment: Alignment.center,
+              margin: EdgeInsets.fromLTRB(0, MediaQuery.of(context).viewPadding.top, 16, 16),
+              height: 48,
+              width: 48,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(48 / 2),
+              ),
+              child: Icon(Icons.close),
+            ),
+          )
+        ],
+      ),
+      endDrawerEnableOpenDragGesture: false,
+      endDrawer: Drawer(
+        width: MediaQuery.of(context).size.width * 0.9,
+        child: ListView(
+          children: [
+            // COMPOSITE EDITING
+            compositeIndexInEditing == null
+                ? Container()
+                : ListView(
+                    shrinkWrap: true,
+                    primary: false,
+                    padding: ThemeConstant.padding8(),
+                    children: [
+                      Text('Construct ${composites[compositeIndexInEditing!].name ?? "Untitled"}'),
+                      ThemeConstant.sizedBox16,
+                      PLSTextField(
+                        controller: _nameController,
+                        labelText: "Construct Name",
+                        onChanged: (String newVal) {
+                          setState(() => composites[compositeIndexInEditing!].name = newVal.toUpperCase());
+                        },
+                      ),
+                      ThemeConstant.sizedBox8,
+                      Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text("Single Item Variable"),
-                          SizedBox(height: 5),
-                          PLSTextField(
-                            controller: _singleItemController,
-                            labelText: "Variable Name",
-                            onChanged: (String newVal) {
-                              setState(() => composites[compositeIndexInEditing!].singleItem = newVal);
+                          Text("Use mode B for weight?"),
+                          Switch(
+                            value: composites[compositeIndexInEditing!].weight == "mode_B",
+                            onChanged: (bool value) {
+                              setState(() => composites[compositeIndexInEditing!].weight = value ? "mode_B" : null);
                             },
                           ),
                         ],
-                      );
-                    }),
-                    ThemeConstant.sizedBox16,
-                    TextButton.icon(
-                      label: Text("Delete"),
-                      icon: Icon(Icons.delete),
-                      onPressed: () {
-                        setState(() {
-                          composites.removeAt(compositeIndexInEditing!);
-                        });
-                      },
-                    ),
-                    ThemeConstant.sizedBox8,
-                    TextButton.icon(
-                      label: Text("Save"),
-                      icon: Icon(Icons.check),
-                      onPressed: () {
-                        setState(() {
-                          compositeIndexInEditing = null;
-                        });
-                      },
-                    ),
-                  ],
-                ),
-        ),
-        // RELATIONSHIP PATHS EDITING
-        Flexible(
-          flex: pathIndexInEditing == null ? 0 : 1,
-          child: pathIndexInEditing == null
-              ? Container()
-              : ListView(
-                  padding: ThemeConstant.padding8(),
-                  children: [
-                    Text("Editting Path ${pathIndexInEditing}"),
-                    Text("From"),
-                    ThemeConstant.sizedBox8,
-                    Builder(builder: (context) {
-                      int compositeNamesCount = possibleCompositeNames().length;
-                      return Wrap(
-                        spacing: 5.0,
-                        children: List<Widget>.generate(
-                          compositeNamesCount,
-                          (int index) {
-                            String compositeName = possibleCompositeNames()[index];
-                            if (pathIndexInEditing == null) {
-                              return Container();
-                            }
-                            var (pathSetIndex, pathInnerIndex) = pathIndexInEditing!;
-                            return ChoiceChip(
-                              label: Text(possibleCompositeNames()[index]),
-                              selected: paths[pathSetIndex][pathInnerIndex].from.contains(compositeName),
-                              onSelected: (bool selected) {
-                                if (selected == false) {
-                                  paths[pathSetIndex][pathInnerIndex].from.remove(compositeName);
-                                } else {
-                                  paths[pathSetIndex][pathInnerIndex].from.add(compositeName);
-                                }
-                                setState(() {});
-                              },
-                            );
-                          },
-                        ).toList(),
-                      );
-                    }),
-                    ThemeConstant.sizedBox16,
-                    Text("To"),
-                    ThemeConstant.sizedBox8,
-                    Builder(builder: (context) {
-                      if (pathIndexInEditing == null) {
-                        return Container();
-                      }
-                      int compositeNamesCount = possibleCompositeNames().length;
-                      return Wrap(
-                        spacing: 5.0,
-                        children: List<Widget>.generate(
-                          compositeNamesCount,
-                          (int index) {
-                            String compositeName = possibleCompositeNames()[index];
-
-                            var (pathSetIndex, pathInnerIndex) = pathIndexInEditing!;
-
-                            return ChoiceChip(
-                              label: Text(possibleCompositeNames()[index]),
-                              selected: paths[pathSetIndex][pathInnerIndex].to.contains(compositeName),
-                              onSelected: (bool selected) {
-                                List<String> toList = paths[pathSetIndex][pathInnerIndex].to;
-                                print("$selected for ($pathSetIndex, $pathInnerIndex) = pathIndexInEditing!");
-
-                                if (selected == false) {
-                                  toList.remove(compositeName);
-                                } else {
-                                  toList.add(compositeName);
-                                }
+                      ),
+                      ThemeConstant.sizedBox8,
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // interaction_term(iv = "CUSA", moderator = "SC", method = two_stage))
+                          Text("Is this an interaction term (for Moderation analysis)?"),
+                          Switch(
+                            value: composites[compositeIndexInEditing!].isInteractionTerm,
+                            onChanged: (bool value) {
+                              setState(() => composites[compositeIndexInEditing!].isInteractionTerm = value);
+                            },
+                          ),
+                        ],
+                      ),
+                      ThemeConstant.sizedBox8,
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text("Is this a multi item?"),
+                          Switch(
+                            value: composites[compositeIndexInEditing!].isMulti,
+                            onChanged: (bool value) {
+                              setState(() => composites[compositeIndexInEditing!].isMulti = value);
+                            },
+                          ),
+                        ],
+                      ),
+                      ThemeConstant.sizedBox8,
+                      Builder(builder: (ctx) {
+                        if (composites[compositeIndexInEditing!].isInteractionTerm) {
+                          return Column(mainAxisSize: MainAxisSize.min, children: [
+                            PLSTextField(
+                              controller: _prefixController,
+                              labelText: "Independent Variable (IV)",
+                              hintText: 'e.g. "CUSA"',
+                              onChanged: (String newVal) {
                                 setState(() {
-                                  paths[pathSetIndex][pathInnerIndex].to = toList;
+                                  composites[compositeIndexInEditing!].iv = newVal;
+                                  composites[compositeIndexInEditing!].name =
+                                      '${composites[compositeIndexInEditing!].iv}*${composites[compositeIndexInEditing!].moderator}';
+                                });
+                                _nameController.text = composites[compositeIndexInEditing!].name ?? "";
+                              },
+                            ),
+                            ThemeConstant.sizedBox8,
+                            PLSTextField(
+                              controller: _fromController,
+                              labelText: "Moderator",
+                              onChanged: (String newVal) {
+                                setState(() {
+                                  composites[compositeIndexInEditing!].moderator = newVal;
+                                  composites[compositeIndexInEditing!].name =
+                                      '${composites[compositeIndexInEditing!].iv}*${composites[compositeIndexInEditing!].moderator}';
+
+                                  _nameController.text = composites[compositeIndexInEditing!].name ?? "";
                                 });
                               },
-                            );
-                          },
-                        ).toList(),
-                      );
-                    }),
-                    ThemeConstant.sizedBox16,
-                    TextButton.icon(
-                      label: Text("Save"),
-                      icon: Icon(Icons.check),
-                      onPressed: () {
-                        setState(() {
-                          pathIndexInEditing = null;
-                        });
-                      },
-                    ),
-                  ],
-                ),
+                            ),
+                          ]);
+                        }
+
+                        if (composites[compositeIndexInEditing!].isMulti) {
+                          return Column(mainAxisSize: MainAxisSize.min, children: [
+                            PLSTextField(
+                              controller: _prefixController,
+                              labelText: "Prefix",
+                              hintText: 'e.g. "cusl_"',
+                              onChanged: (String newVal) {
+                                setState(() => composites[compositeIndexInEditing!].multiItem?.prefix = newVal);
+                              },
+                            ),
+                            ThemeConstant.sizedBox8,
+                            PLSTextField(
+                              controller: _fromController,
+                              labelText: "From",
+                              onChanged: (String newVal) {
+                                setState(
+                                    () => composites[compositeIndexInEditing!].multiItem?.from = int.parse(newVal));
+                              },
+                            ),
+                            ThemeConstant.sizedBox8,
+                            PLSTextField(
+                                controller: _toController,
+                                labelText: "To",
+                                onChanged: (String newVal) {
+                                  setState(
+                                      () => composites[compositeIndexInEditing!].multiItem?.to = int.parse(newVal));
+                                })
+                          ]);
+                        }
+                        return Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text("Single Item Variable"),
+                            SizedBox(height: 5),
+                            PLSTextField(
+                              controller: _singleItemController,
+                              labelText: "Variable Name",
+                              onChanged: (String newVal) {
+                                setState(() => composites[compositeIndexInEditing!].singleItem = newVal);
+                              },
+                            ),
+                          ],
+                        );
+                      }),
+                      ThemeConstant.sizedBox16,
+                      TextButton.icon(
+                        label: Text("Delete"),
+                        icon: Icon(Icons.delete),
+                        onPressed: () {
+                          setState(() {
+                            composites.removeAt(compositeIndexInEditing!);
+                          });
+                        },
+                      ),
+                      ThemeConstant.sizedBox8,
+                      TextButton.icon(
+                        label: Text("Save"),
+                        icon: Icon(Icons.check),
+                        onPressed: () {
+                          setState(() {
+                            compositeIndexInEditing = null;
+                          });
+                          closeEndDrawer();
+                        },
+                      ),
+                    ],
+                  ),
+            // RELATIONSHIP PATHS EDITING
+            pathIndexInEditing == null
+                ? Container()
+                : ListView(
+                    shrinkWrap: true,
+                    primary: false,
+                    padding: ThemeConstant.padding8(),
+                    children: [
+                      Text("From"),
+                      ThemeConstant.sizedBox8,
+                      Builder(builder: (context) {
+                        int compositeNamesCount = possibleCompositeNames().length;
+                        return Wrap(
+                          spacing: 5.0,
+                          children: List<Widget>.generate(
+                            compositeNamesCount,
+                            (int index) {
+                              String compositeName = possibleCompositeNames()[index];
+                              if (pathIndexInEditing == null) {
+                                return Container();
+                              }
+                              var (pathSetIndex, pathInnerIndex) = pathIndexInEditing!;
+                              return ChoiceChip(
+                                showCheckmark: true,
+                                label: Text(possibleCompositeNames()[index]),
+                                selected: paths[pathSetIndex][pathInnerIndex].from.contains(compositeName),
+                                onSelected: (bool selected) {
+                                  if (selected == false) {
+                                    paths[pathSetIndex][pathInnerIndex].from.remove(compositeName);
+                                  } else {
+                                    paths[pathSetIndex][pathInnerIndex].from.add(compositeName);
+                                  }
+                                  setState(() {});
+                                },
+                              );
+                            },
+                          ).toList(),
+                        );
+                      }),
+                      ThemeConstant.sizedBox16,
+                      Text("To"),
+                      ThemeConstant.sizedBox8,
+                      Builder(builder: (context) {
+                        if (pathIndexInEditing == null) {
+                          return Container();
+                        }
+                        int compositeNamesCount = possibleCompositeNames().length;
+                        return Wrap(
+                          spacing: 5.0,
+                          children: List<Widget>.generate(
+                            compositeNamesCount,
+                            (int index) {
+                              String compositeName = possibleCompositeNames()[index];
+
+                              var (pathSetIndex, pathInnerIndex) = pathIndexInEditing!;
+
+                              return ChoiceChip(
+                                showCheckmark: true,
+                                label: Text(possibleCompositeNames()[index]),
+                                selected: paths[pathSetIndex][pathInnerIndex].to.contains(compositeName),
+                                onSelected: (bool selected) {
+                                  List<String> toList = paths[pathSetIndex][pathInnerIndex].to;
+                                  print("$selected for ($pathSetIndex, $pathInnerIndex) = pathIndexInEditing!");
+
+                                  if (selected == false) {
+                                    toList.remove(compositeName);
+                                  } else {
+                                    toList.add(compositeName);
+                                  }
+                                  setState(() {
+                                    paths[pathSetIndex][pathInnerIndex].to = toList;
+                                  });
+                                },
+                              );
+                            },
+                          ).toList(),
+                        );
+                      }),
+                      ThemeConstant.sizedBox16,
+                      TextButton.icon(
+                        label: Text("Save"),
+                        icon: Icon(Icons.check),
+                        onPressed: () {
+                          setState(() {
+                            pathIndexInEditing = null;
+                          });
+                          closeEndDrawer();
+                        },
+                      ),
+                    ],
+                  )
+          ],
         ),
-      ],
+      ),
     );
   }
 
-  Column eachPathEditting(int pathSetIndex) {
+  Widget eachPathEditing(int pathSetIndex) {
     List<RelationshipPath> innerPaths = paths[pathSetIndex];
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
+    return Padding(
+      padding: ThemeConstant.padding16(vertical: true, horizontal: false),
+      child: makeSection([
         Row(children: [
-          Text("Structural model #${pathSetIndex + 1}"),
+          makeSectionTitle("Structural Model #${pathSetIndex + 1}"),
+          Spacer(),
           TextButton(
               onPressed: () {
                 paths[pathSetIndex].add(RelationshipPath(from: [], to: []));
                 pathIndexInEditing = (pathSetIndex, paths[pathSetIndex].length - 1);
                 compositeIndexInEditing = null;
                 setState(() {});
+                openEndDrawer();
               },
-              child: Text("Add Relationships (Paths)")),
+              child: Text("+ Add Paths")),
         ]),
         ListView.builder(
+          padding: EdgeInsets.zero,
           shrinkWrap: true,
           primary: false,
           itemCount: innerPaths.length,
@@ -549,26 +596,30 @@ class _ComparePredictionsScreenState extends BaseState<ComparePredictionsScreen>
                   pathIndexInEditing = (pathSetIndex, pathInnerIndex);
                   compositeIndexInEditing = null;
                 });
+                openEndDrawer();
               },
               child: Card(
                 shape: RoundedRectangleBorder(
                   side: BorderSide(
-                    color: pathIndexInEditing == (pathSetIndex, pathInnerIndex)
-                        ? Theme.of(context).primaryColor
-                        : Colors.transparent,
-                    width: 2,
-                  ),
+                      color: pathIndexInEditing == (pathSetIndex, pathInnerIndex)
+                          ? Theme.of(context).primaryColor
+                          : Colors.transparent,
+                      width: 2),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: Row(
                     children: [
-                      Builder(builder: (context) {
-                        String finalString = _makePathString((pathSetIndex, pathInnerIndex));
-                        return Text(finalString);
-                      }),
-                      Spacer(),
+                      Expanded(
+                        child: Builder(builder: (context) {
+                          String finalString = _makePathString((pathSetIndex, pathInnerIndex));
+                          return Text(
+                            finalString,
+                            style: TextStyle(fontFamily: GoogleFonts.robotoMono().fontFamily),
+                          );
+                        }),
+                      ),
                       Icon(Icons.edit),
                     ],
                   ),
@@ -577,7 +628,7 @@ class _ComparePredictionsScreenState extends BaseState<ComparePredictionsScreen>
             );
           },
         ),
-      ],
+      ]),
     );
   }
 

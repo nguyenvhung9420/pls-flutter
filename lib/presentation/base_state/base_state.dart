@@ -3,10 +3,69 @@ import 'package:flutter/material.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 import 'package:pls_flutter/utils/theme_constant.dart';
 
+import 'loading_indicator.dart';
+
 abstract class BaseState<T extends StatefulWidget> extends State<T> {
   bool _isLoading = false;
   StreamController<bool> showLoadingHudStream = StreamController.broadcast();
   double defaultPadding = 16.0;
+
+  Widget loadingNotice() => isLoading
+      ? Container(
+          clipBehavior: Clip.antiAlias,
+          decoration: BoxDecoration(
+            border: Border.all(color: Theme.of(context).colorScheme.primary, width: 1),
+            borderRadius: BorderRadius.circular(12),
+            color: Theme.of(context).colorScheme.primary.withOpacity(0.03),
+          ),
+          child: Padding(
+              padding: ThemeConstant.padding16(),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+                Text("Calculation can take up to 3 minutes to complete due to its complexity. Please be patient."),
+                ThemeConstant.sizedBox8,
+                isLoading
+                    ? Container(
+                        clipBehavior: Clip.antiAlias,
+                        height: 8,
+                        decoration: BoxDecoration(borderRadius: BorderRadius.circular(10)),
+                        child: LinearProgressIndicator())
+                    : Container()
+              ])))
+      : Container();
+
+  Widget makeBottomSheetTitle(String title) {
+    return Padding(
+      padding: ThemeConstant.padding8(horizontal: false, vertical: true),
+      child: Text(
+        title,
+        style: TextStyle(fontSize: Theme.of(context).textTheme.titleLarge?.fontSize, fontWeight: FontWeight.bold),
+      ),
+    );
+  }
+
+  Widget makeSectionTitle(String title) {
+    return Text(
+      title.toUpperCase(),
+      style: TextStyle(
+          color: Theme.of(context).colorScheme.primaryContainer,
+          fontSize: Theme.of(context).textTheme.bodySmall?.fontSize,
+          fontWeight: FontWeight.w600),
+    );
+  }
+
+  Widget makeSection(List<Widget> children) {
+    return Container(
+        padding: ThemeConstant.padding16(),
+        decoration: BoxDecoration(
+          color: Colors.black.withOpacity(0.04),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: children,
+        ));
+  }
 
   bool get isLoading {
     return _isLoading;
@@ -61,6 +120,19 @@ abstract class BaseState<T extends StatefulWidget> extends State<T> {
     ScaffoldMessenger.of(context).showSnackBar(snackBar);
   }
 
+  Widget alternativeAppbarTitle({required String title}) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ThemeConstant.sizedBox8,
+        Text(title, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+        ThemeConstant.sizedBox16,
+        ThemeConstant.sizedBox16,
+      ],
+    );
+  }
+
   void showBaseBottomSheet({
     required Widget child,
     required BuildContext context,
@@ -110,48 +182,5 @@ abstract class BaseState<T extends StatefulWidget> extends State<T> {
 
   void hideLoadingIndicatorHud() {
     Navigator.of(context).pop();
-  }
-}
-
-class LoadingIndicator extends StatelessWidget {
-  LoadingIndicator({this.text = ''});
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    var displayedText = text;
-
-    return Container(
-        padding: EdgeInsets.all(16),
-        color: Colors.black87,
-        child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
-            children: [_getLoadingIndicator(), _getHeading(context), _getText(displayedText)]));
-  }
-
-  Padding _getLoadingIndicator() {
-    return Padding(
-        child: Container(child: CircularProgressIndicator(strokeWidth: 3), width: 32, height: 32),
-        padding: EdgeInsets.only(bottom: 16));
-  }
-
-  Widget _getHeading(context) {
-    return Padding(
-        child: Text(
-          'Please wait …',
-          style: TextStyle(color: Colors.white, fontSize: 16),
-          textAlign: TextAlign.center,
-        ),
-        padding: EdgeInsets.only(bottom: 4));
-  }
-
-  Text _getText(String displayedText) {
-    return Text(
-      displayedText,
-      style: TextStyle(color: Colors.white, fontSize: 14),
-      textAlign: TextAlign.center,
-    );
   }
 }

@@ -60,7 +60,7 @@ class _MyHomePageState extends BaseState<MyHomePage> {
       description: 'The extent to which indicators measuring the same construct are associated with each other',
     ),
     PlsTask(taskCode: 'convergent_validity', name: 'Convergent Validity', description: 'Description for Item 5'),
-    PlsTask(taskCode: 'discriminant_validity', name: 'Discriminant Validty', description: 'Description for Item 5'),
+    PlsTask(taskCode: 'discriminant_validity', name: 'Discriminant Validity', description: 'Description for Item 5'),
     PlsTask(
         taskCode: 'evaluation_of_formative_basic',
         name: 'Model and measurement details',
@@ -212,7 +212,7 @@ class _MyHomePageState extends BaseState<MyHomePage> {
     if (accessToken == null) return [];
     if (configuredModel == null) return [];
     if (configuredModel?.filePath == null) return [];
-    if (seminrSummary?.getSummaryList().isNotEmpty ?? false) return seminrSummary?.getSummaryList() ?? [];
+    // if (seminrSummary?.getSummaryList().isNotEmpty ?? false) return seminrSummary?.getSummaryList() ?? [];
 
     SeminrSummary? summary = await PLSRepository().getSummaryPaths(
       userToken: accessToken!,
@@ -227,9 +227,9 @@ class _MyHomePageState extends BaseState<MyHomePage> {
     if (accessToken == null) return [];
     if (configuredModel == null) return [];
     if (configuredModel?.filePath == null) return [];
-    if (bootstrapSummary?.getBootstrapSummaryList().isNotEmpty ?? false) {
-      return bootstrapSummary?.getBootstrapSummaryList() ?? [];
-    }
+    // if (bootstrapSummary?.getBootstrapSummaryList().isNotEmpty ?? false) {
+    //   return bootstrapSummary?.getBootstrapSummaryList() ?? [];
+    // }
 
     BootstrapSummary? summary = await PLSRepository().getBoostrapSummary(
       userToken: accessToken!,
@@ -439,6 +439,7 @@ class _MyHomePageState extends BaseState<MyHomePage> {
     showSnackBar(message: "${task.name} requested. Please wait!");
 
     setState(() => selectedTask = task);
+    setState(() => textDataToShow = []);
     List<Map<String, String>> textToShow = [];
 
     enableLoading();
@@ -500,11 +501,34 @@ class _MyHomePageState extends BaseState<MyHomePage> {
     disableLoading();
 
     if (isOnPhone) {
-      showBaseBottomSheet(
-        proportionWithSreenHeight: 0.9,
-        context: context,
-        child: buildCalculationResult(),
-      );
+      switch (task.taskCode) {
+        case 'predict_models_comparisons':
+          if (accessToken == null) return;
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => ComparePredictionsScreen(
+                accessToken: accessToken!,
+                configuredModel: configuredModel,
+                onDoneWithModelSetup: (ConfiguredModel model) {},
+              ),
+            ),
+          );
+        case 'formative_convergent_validity':
+          if (configuredModel == null) {
+            return;
+          }
+          Navigator.of(context).push(
+            MaterialPageRoute(
+                builder: (context) => FormativeConvergentValidityScreen(filePath: configuredModel!.filePath)),
+          );
+
+        default:
+          showBaseBottomSheet(
+            proportionWithSreenHeight: 0.9,
+            context: context,
+            child: buildCalculationResult(),
+          );
+      }
     }
   }
 
@@ -522,9 +546,9 @@ class _MyHomePageState extends BaseState<MyHomePage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(deviceType),
+        title: Text("PLS SEM"),
         elevation: 1,
-        bottom: defaultLinearProgressBar(context),
+        // bottom: defaultLinearProgressBar(context),
       ),
       body: OrientationBuilder(
         builder: (BuildContext context, Orientation orientation) {
@@ -671,15 +695,12 @@ class _MyHomePageState extends BaseState<MyHomePage> {
           return ListView(
             padding: ThemeConstant.padding16(),
             children: [
-              Text(
-                selectedTask?.name ?? "",
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              Text(
-                selectedTask?.description ?? "",
-                style: Theme.of(context).textTheme.titleSmall,
-              ),
+              makeBottomSheetTitle(selectedTask?.name ?? ""),
+              ThemeConstant.sizedBox16,
+              loadingNotice(),
+              ThemeConstant.sizedBox16,
               ListView.builder(
+                  padding: EdgeInsets.zero,
                   primary: false,
                   shrinkWrap: true,
                   itemCount: textDataToShow.length,
