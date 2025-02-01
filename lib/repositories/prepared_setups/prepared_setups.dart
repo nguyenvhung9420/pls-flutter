@@ -1,16 +1,7 @@
+import 'package:pls_flutter/presentation/models/composite.dart';
 import 'package:pls_flutter/presentation/models/model_setups.dart';
-
-// corp_rep_mm <- constructs(
-//     composite("COMP", multi_items("comp_", 1:3)),
-//     composite("LIKE", multi_items("like_", 1:3)),
-//     composite("CUSA", single_item("cusa")),
-//     composite("CUSL", multi_items("cusl_", 1:3))
-//   )
-
-//   corp_rep_sm <- relationships(
-//     paths(from = c("COMP", "LIKE"), to = c("CUSA", "CUSL")),
-//     paths(from = c("CUSA"), to = c("CUSL"))
-//   )
+import 'package:pls_flutter/presentation/models/multi_item.dart';
+import 'package:pls_flutter/presentation/models/relationship_path.dart';
 
 final ConfiguredModel corpDataModel = ConfiguredModel(
   usePathWeighting: false,
@@ -167,8 +158,7 @@ final ConfiguredModel corpDataModelExt = ConfiguredModel(
     ),
   ],
   paths: [
-    RelationshipPath(
-        from: ["QUAL", "PERF", "CSOR", "ATTR"], to: ["COMP", "LIKE"]),
+    RelationshipPath(from: ["QUAL", "PERF", "CSOR", "ATTR"], to: ["COMP", "LIKE"]),
     RelationshipPath(from: ["COMP", "LIKE"], to: ["CUSA", "CUSL"]),
     RelationshipPath(from: ["CUSA"], to: ["CUSL"]),
   ],
@@ -301,8 +291,7 @@ final ConfiguredModel corpDataModelExtModeration = ConfiguredModel(
     ),
   ],
   paths: [
-    RelationshipPath(
-        from: ["QUAL", "PERF", "CSOR", "ATTR"], to: ["COMP", "LIKE"]),
+    RelationshipPath(from: ["QUAL", "PERF", "CSOR", "ATTR"], to: ["COMP", "LIKE"]),
     RelationshipPath(from: ["COMP", "LIKE"], to: ["CUSA", "CUSL"]),
     RelationshipPath(from: ["CUSA", "SC", "CUSA*SC"], to: ["CUSL"]),
   ],

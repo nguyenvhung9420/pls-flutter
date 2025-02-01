@@ -7,9 +7,12 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:pls_flutter/presentation/base_state/pls_textfield.dart';
 import 'package:pls_flutter/presentation/models/model_setups.dart';
+import 'package:pls_flutter/presentation/models/multi_item.dart';
 import 'package:pls_flutter/repositories/authentication/token_repository.dart';
 import 'package:pls_flutter/repositories/prepared_setups/prepared_setups.dart';
 import 'package:pls_flutter/utils/theme_constant.dart';
+import 'package:pls_flutter/presentation/models/composite.dart';
+import 'package:pls_flutter/presentation/models/relationship_path.dart';
 
 class FileChooserScreen extends StatefulWidget {
   final Function(ConfiguredModel) onDoneWithModelSetup;
@@ -129,6 +132,48 @@ class _FileChooserScreenState extends BaseState<FileChooserScreen> {
   final TextEditingController _toController = TextEditingController();
   final TextEditingController _singleItemController = TextEditingController();
 
+  Future<bool?> _showSaveDialog(BuildContext context) {
+    return showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        String contentText = 'Do you want to save the changes on your dataset and measurement and structural models?';
+
+        if (composites.isEmpty) {
+          contentText = 'Your measurement model (including composites) is empty. Do you still want to save?';
+        } else if (paths.isEmpty) {
+          contentText = 'Your structural model is empty. Do you still want to save?';
+        }
+
+        return AlertDialog(
+          title: const Text('Save changes before exiting?'),
+          content: Text(contentText),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).popUntil((route) => route.isFirst);
+              },
+              child: const Text('Don\'t Save'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Cancel
+              },
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                _onDoneWithModelSetup();
+
+                Navigator.of(context).popUntil((route) => route.isFirst);
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   void _onDoneWithModelSetup() {
     widget.onDoneWithModelSetup(ConfiguredModel(
         composites: composites,
@@ -136,7 +181,6 @@ class _FileChooserScreenState extends BaseState<FileChooserScreen> {
         delimiter: _fieldDelimiter!,
         filePath: filePath!,
         usePathWeighting: usePathWeighting));
-    Navigator.of(context).pop();
   }
 
   void openEndDrawer() {
@@ -152,13 +196,20 @@ class _FileChooserScreenState extends BaseState<FileChooserScreen> {
     return Scaffold(
         key: _key, // Assign the key to Scaffold.
         appBar: AppBar(
+          automaticallyImplyLeading: false,
           elevation: 1,
           title: const Text("Data Import"),
           actions: [
-            TextButton.icon(
-              onPressed: (filePath ?? "").isEmpty ? null : () => _onDoneWithModelSetup(),
-              icon: Icon(Icons.check, color: Theme.of(context).colorScheme.onPrimary),
-              label: Text("DONE", style: TextStyle(color: Theme.of(context).colorScheme.onPrimary)),
+            TextButton(
+              onPressed: () {
+                if ((filePath ?? "").isEmpty) {
+                  Navigator.of(context).popUntil((route) => route.isFirst);
+                } else {
+                  _showSaveDialog(context);
+                }
+              },
+              child: Text((filePath ?? "").isEmpty ? "EXIT" : "DONE",
+                  style: TextStyle(color: Theme.of(context).colorScheme.onPrimary)),
             )
           ],
         ),

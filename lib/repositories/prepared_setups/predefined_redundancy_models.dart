@@ -42,7 +42,9 @@
 // )
 
 import 'package:pls_flutter/data/models/redundancy_model.dart';
+import 'package:pls_flutter/presentation/models/composite.dart';
 import 'package:pls_flutter/presentation/models/model_setups.dart';
+import 'package:pls_flutter/presentation/models/multi_item.dart';
 
 final List<RedundancyModel> predefinedRedundancyModels = [
   RedundancyModel(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:pls_flutter/presentation/models/model_setups.dart';
+import 'package:pls_flutter/presentation/models/composite.dart';
 
 class RedundancyModel {
   String name;

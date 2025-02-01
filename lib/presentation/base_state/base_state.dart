@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 import 'package:pls_flutter/utils/theme_constant.dart';
-
+import 'package:fluttertoast/fluttertoast.dart';
 import 'loading_indicator.dart';
 
 abstract class BaseState<T extends StatefulWidget> extends State<T> {
@@ -146,7 +146,6 @@ abstract class BaseState<T extends StatefulWidget> extends State<T> {
         return Container(
           height: MediaQuery.of(context).size.height * proportionWithSreenHeight,
           color: backgroundColor,
-          // padding: ThemeConstant.padding16(horizontal: false, vertical: true),
           child: Stack(
             alignment: Alignment.topRight,
             children: [

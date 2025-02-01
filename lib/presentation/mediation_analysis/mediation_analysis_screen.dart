@@ -9,6 +9,8 @@ import 'package:pls_flutter/presentation/base_state/base_state.dart';
 import 'package:pls_flutter/presentation/base_state/pls_textfield.dart';
 import 'package:pls_flutter/presentation/file_chooser/file_chooser_screen.dart';
 import 'package:pls_flutter/presentation/models/model_setups.dart';
+import 'package:pls_flutter/presentation/models/composite.dart';
+import 'package:pls_flutter/presentation/models/relationship_path.dart';
 import 'package:pls_flutter/presentation/models/pls_task_view.dart';
 import 'package:pls_flutter/repositories/authentication/auth_repository.dart';
 import 'package:pls_flutter/repositories/authentication/token_repository.dart';
