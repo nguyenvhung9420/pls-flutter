@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:pls_flutter/data/models/boostrap_summary.dart';
+import 'package:pls_flutter/data/models/instruction_maker.dart';
 import 'package:pls_flutter/data/models/plot_data.dart';
 import 'package:pls_flutter/data/models/predict_models_comparison.dart';
 import 'package:pls_flutter/data/models/predict_summary.dart';
@@ -10,8 +11,9 @@ import 'package:pls_flutter/data/models/seminr_summary.dart';
 import 'package:pls_flutter/data/models/specific_effect_significance.dart';
 import 'package:pls_flutter/presentation/file_chooser/file_chooser_screen.dart';
 import 'package:pls_flutter/presentation/base_state/base_state.dart';
-import 'package:pls_flutter/presentation/home/formative_convergent_validity_screen.dart';
-import 'package:pls_flutter/presentation/home/prediction_comparisons.dart';
+import 'package:pls_flutter/presentation/mediation_analysis/mediation_analysis_screen.dart';
+import 'package:pls_flutter/presentation/moderation_analysis/formative_convergent_validity_screen.dart';
+import 'package:pls_flutter/presentation/structural_model_eval/prediction_comparisons.dart';
 import 'package:pls_flutter/presentation/models/model_setups.dart';
 import 'package:pls_flutter/presentation/models/pls_task_view.dart';
 import 'package:pls_flutter/presentation/plot/pls_seminr_plot.dart';
@@ -124,9 +126,6 @@ class _MyHomePageState extends BaseState<MyHomePage> {
         description:
             'Moderation describes a situation in which the relationship between two constructs is not constant but depends on the values of a third variable, referred to as a moderator variable'),
 
-    // Reliability plot
-    PlsTask(taskCode: 'reliability_plot', name: 'Reliability plot', description: 'Reliability plot'),
-
     // Formative Convergent Validity:
     PlsTask(
       taskCode: 'formative_convergent_validity',
@@ -137,36 +136,8 @@ class _MyHomePageState extends BaseState<MyHomePage> {
 
   String instructions = "";
 
-  // String makeInstructions() {
   String makeInstructions({required ConfiguredModel model}) {
-    List<String> constructs = model.composites.map((Composite composite) {
-      return composite.makeCompositeCommandString();
-    }).toList();
-
-    List<String> paths = model.paths.map((RelationshipPath path) {
-      return path.makePathString();
-    }).toList();
-
-    String constructString = constructs.join(", ");
-    String pathsString = paths.join(", ");
-    String usingPathWeighting = model.usePathWeighting ? "inner_weights = path_weighting," : "";
-
-    return """corp_rep_mm <- constructs(
-            $constructString
-          )
-
-          corp_rep_sm <- relationships(
-            $pathsString
-          )
-
-          corp_rep_pls_model <- estimate_pls(
-            data = corp_rep_data,
-            measurement_model = corp_rep_mm,
-            structural_model = corp_rep_sm,
-            $usingPathWeighting
-            missing = mean_replacement,
-            missing_value = "-99"
-          )""";
+    return InstructionMaker.makeInstructions(model: configuredModel!);
   }
 
   @override
@@ -178,7 +149,6 @@ class _MyHomePageState extends BaseState<MyHomePage> {
       TaskGroup('Model Setup', [
         plsTaskList[0],
         plsTaskList[1],
-        plsTaskList[16],
       ]),
       TaskGroup('Evaluation of reflective measurement models', [
         plsTaskList[2],
@@ -188,7 +158,7 @@ class _MyHomePageState extends BaseState<MyHomePage> {
       ]),
       TaskGroup('Evaluation of formative measurement models', [
         plsTaskList[6],
-        plsTaskList[17],
+        plsTaskList[16],
         plsTaskList[7],
         plsTaskList[8],
       ]),
@@ -424,61 +394,13 @@ class _MyHomePageState extends BaseState<MyHomePage> {
     );
     setState(() => predictSummary = summary);
     return [
-      {
-        "name": "Prediction Summary",
-        "value": summary?.predictSummary?.join("\n") ?? "",
-      },
+      {"name": "Prediction Summary", "value": summary?.predictSummary?.join("\n") ?? ""},
     ];
   }
 
   // Predictive model comparisons
   Future<List<Map<String, String>>> _addPredictiveModelComparisons() async {
     List<Map<String, String>> toReturn = [];
-    return toReturn;
-  }
-
-  // Mediation analysis
-  Future<List<Map<String, String>>> _addMediationAnalysis() async {
-    List<Map<String, String>> toReturn = [];
-    if (seminrSummary == null) await _addSummaryPaths();
-    if (bootstrapSummary == null) await _addBootstrapSummary();
-
-    // specific_effect_significance:
-    if (accessToken == null) return [];
-    if (configuredModel == null) return [];
-    if (configuredModel?.filePath == null) return [];
-
-    SpecificEffectSignificance? specificEffectSignificance = await PLSRepository().getSpecificEffectSignificance(
-      userToken: accessToken!,
-      instructions: makeInstructions(model: configuredModel!),
-      filePath: configuredModel!.filePath,
-      from: "COMP",
-      through: "CUSA",
-      to: "CUSL",
-    );
-    setState(() => this.specificEffectSignificance = specificEffectSignificance);
-    toReturn.add(
-      {
-        "name": "Specific Effect Significance",
-        "value": specificEffectSignificance?.specificEffectSignificance?.join("\n") ?? "",
-      },
-    );
-    toReturn.add({
-      "name": "Total Effects",
-      "value": seminrSummary?.totalEffects?.join("\n") ?? "",
-    });
-    toReturn.add({
-      "name": "Total Indirect Effects",
-      "value": seminrSummary?.totalIndirectEffects?.join("\n") ?? "",
-    });
-    toReturn.add({
-      "name": "Paths",
-      "value": seminrSummary?.paths?.join("\n") ?? "",
-    });
-    toReturn.add({
-      "name": "Bootstrapped Paths",
-      "value": bootstrapSummary?.bootstrappedPaths?.join("\n") ?? "",
-    });
     return toReturn;
   }
 
@@ -492,25 +414,10 @@ class _MyHomePageState extends BaseState<MyHomePage> {
         instructions: makeInstructions(model: configuredModel!));
     return [
       {
-        "name": "Bootstraped Paths",
+        "name": "Bootstrapped Paths",
         "value": summary?.bootstrappedPaths?.join("\n") ?? "",
       }
     ];
-  }
-
-  Future<dynamic> _getPlotReliability() async {
-    if (accessToken == null) return [];
-    if (configuredModel == null) return [];
-    if (configuredModel?.filePath == null) return [];
-
-    dynamic bytes = await PLSRepository().getPlotReliability(
-        userToken: accessToken!,
-        filePath: configuredModel!.filePath,
-        instructions: makeInstructions(model: configuredModel!));
-
-    return bytes;
-
-    // return Image.memory(bytes).image;
   }
 
   Future<String?> _getPlotPLSModel() async {
@@ -529,6 +436,8 @@ class _MyHomePageState extends BaseState<MyHomePage> {
   }
 
   void onSelectedTask({required PlsTask task, required bool isOnPhone}) async {
+    showSnackBar(message: "${task.name} requested. Please wait!");
+
     setState(() => selectedTask = task);
     List<Map<String, String>> textToShow = [];
 
@@ -577,17 +486,11 @@ class _MyHomePageState extends BaseState<MyHomePage> {
         textToShow = await _addGeneralModelPrediction();
         break;
       case 'predict_models_comparisons':
-        // textToShow = await _addPredictiveModelComparisons();
         break;
       case 'mediation_analysis':
-        textToShow = await _addMediationAnalysis();
         break;
       case 'moderation_analysis':
         textToShow = await _addModerationAnalysis();
-        break;
-      case 'reliability_plot':
-        dataBytes = await _getPlotReliability();
-        // setState(() {});
         break;
       default:
         textToShow = [];
@@ -603,8 +506,6 @@ class _MyHomePageState extends BaseState<MyHomePage> {
         child: buildCalculationResult(),
       );
     }
-
-    showSnackBar(message: "${task.name} calculated!");
   }
 
   String _getDeviceType(BuildContext context) {
@@ -756,6 +657,16 @@ class _MyHomePageState extends BaseState<MyHomePage> {
             configuredModel: configuredModel,
             onDoneWithModelSetup: (ConfiguredModel model) {},
           );
+        case 'mediation_analysis':
+          if (accessToken == null || configuredModel == null) {
+            return Container();
+          }
+          return MediationAnalysisScreen(
+              accessToken: accessToken!,
+              seminrSummary: seminrSummary,
+              filePath: configuredModel?.filePath,
+              configuredmodel: configuredModel,
+              bootstrapSummary: bootstrapSummary);
         default:
           return ListView(
             padding: ThemeConstant.padding16(),

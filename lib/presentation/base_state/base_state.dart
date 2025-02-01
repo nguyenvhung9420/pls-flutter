@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
+import 'package:pls_flutter/utils/theme_constant.dart';
 
 abstract class BaseState<T extends StatefulWidget> extends State<T> {
   bool _isLoading = false;
@@ -39,7 +40,7 @@ abstract class BaseState<T extends StatefulWidget> extends State<T> {
   PreferredSize? defaultLinearProgressBar(BuildContext context) {
     return _isLoading
         ? PreferredSize(
-            preferredSize: Size.fromHeight(6.0),
+            preferredSize: Size.fromHeight(8.0),
             child: LinearProgressIndicator(
               backgroundColor: Theme.of(context).colorScheme.secondary.withOpacity(0.3),
               valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.secondary),
@@ -52,7 +53,7 @@ abstract class BaseState<T extends StatefulWidget> extends State<T> {
     showAlertView(
         title: "Error",
         body: "Unexpected error: \"${e.toString()}\"",
-        actions: [TextButton(onPressed: Navigator.of(context).pop, child: Text("OK"))]);
+        actions: [TextButton(onPressed: () => Navigator.of(context).pop(), child: Text("OK"))]);
   }
 
   void showSnackBar({required dynamic message, IconData? iconData}) {
@@ -60,17 +61,20 @@ abstract class BaseState<T extends StatefulWidget> extends State<T> {
     ScaffoldMessenger.of(context).showSnackBar(snackBar);
   }
 
-  void showBaseBottomSheet(
-      {required Widget child,
-      required BuildContext context,
-      double proportionWithSreenHeight = 0.75,
-      Color? backgroundColor}) {
+  void showBaseBottomSheet({
+    required Widget child,
+    required BuildContext context,
+    double proportionWithSreenHeight = 0.75,
+    Color? backgroundColor,
+  }) {
     showMaterialModalBottomSheet<void>(
+      enableDrag: false,
       context: context,
       builder: (BuildContext context) {
         return Container(
           height: MediaQuery.of(context).size.height * proportionWithSreenHeight,
           color: backgroundColor,
+          // padding: ThemeConstant.padding16(horizontal: false, vertical: true),
           child: Stack(
             alignment: Alignment.topRight,
             children: [
@@ -79,6 +83,7 @@ abstract class BaseState<T extends StatefulWidget> extends State<T> {
                 onPressed: () => Navigator.pop(context),
                 icon: Icon(Icons.close),
               ),
+              isLoading ? LinearProgressIndicator() : Container(),
             ],
           ),
         );
@@ -106,22 +111,6 @@ abstract class BaseState<T extends StatefulWidget> extends State<T> {
   void hideLoadingIndicatorHud() {
     Navigator.of(context).pop();
   }
-
-  // Widget alternativeAppbarTitle({required String title}) {
-  //   return Column(
-  //     mainAxisSize: MainAxisSize.min,
-  //     crossAxisAlignment: CrossAxisAlignment.start,
-  //     children: [
-  //       ThemeConstant.sizedBox8,
-  //       Text(
-  //         title,
-  //         style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-  //       ),
-  //       ThemeConstant.sizedBox16,
-  //       ThemeConstant.sizedBox16,
-  //     ],
-  //   );
-  // }
 }
 
 class LoadingIndicator extends StatelessWidget {

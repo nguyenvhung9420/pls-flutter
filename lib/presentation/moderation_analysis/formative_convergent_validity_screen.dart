@@ -90,7 +90,6 @@ class _FormativeConvergentValidityScreenState extends BaseState<FormativeConverg
 
   Future<void> _addRedundancySummaryPaths({required RedundancyModel redundancyModel}) async {
     if (accessToken == null) return;
-    // if (redundancyModels.isEmpty) return;
 
     enableLoading();
     SeminrSummary? summary = await PLSRepository().getSummaryRedundancyModel(
@@ -99,12 +98,13 @@ class _FormativeConvergentValidityScreenState extends BaseState<FormativeConverg
       filePath: widget.filePath,
     );
     setState(() => seminrSummaries.add(summary));
-    // return summary?.getSummaryList() ?? [];
+
     disableLoading();
   }
 
   void _populateDataFromModel() {
-    redundancyModels = predefinedRedundancyModels;
+    redundancyModels = [];
+    redundancyModels.addAll(predefinedRedundancyModels);
     setState(() {});
     redundancyModels.forEach((RedundancyModel element) async {
       await _addRedundancySummaryPaths(redundancyModel: element);
