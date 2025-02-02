@@ -44,13 +44,13 @@ Certain tasks, such as convergent validity analysis for formative models, modera
 
 ## Status 
 
-Based on the document mentioned above, the PLS-SEM processes that are supported in the app include:
+Based on the [document mentioned](https://sem-in-r.github.io/seminr/#1_Introduction) above, the PLS-SEM processes that are supported in the app include:
 
 
 ### Chapter 3: Model set up
 
-- Create a measurement model ([link](https://sem-in-r.github.io/seminr/#232_Create_a_measurement_model))
-- Create a structural model ([link](https://sem-in-r.github.io/seminr/#233_Create_a_structural_model))
+- Create a measurement model  
+- Create a structural model  
 - Estimating the model (link)
 - Summarizing the model
 - Bootstrapping the model
