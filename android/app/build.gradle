@@ -24,8 +24,10 @@ android {
         applicationId = "com.example.pls_flutter"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
+//        minSdk = flutter.minSdkVersion
+//        targetSdk = flutter.targetSdkVersion
+        minSdk = 26
+        targetSdk = 33
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
@@ -37,6 +39,63 @@ android {
             signingConfig = signingConfigs.debug
         }
     }
+}
+
+repositories {
+    // Use Maven Central for resolving dependencies.
+    mavenCentral()
+    maven {
+        url = uri("https://jitpack.io")
+    }
+    maven {
+        url = uri("https://storage.googleapis.com/r8-releases/raw")
+    }
+    maven { url = uri( "https://nexus.bedatadriven.com/content/groups/public") }
+    flatDir {
+        dirs("libs")
+    }
+}
+
+dependencies {
+    implementation("com.android.tools:r8:8.3.37")
+        // Use JUnit Jupiter for testing.
+
+//    testImplementation(libs.junit.jupiter)
+
+//    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+
+    // This dependency is used by the application.
+//    implementation(libs.guava)
+
+    // Core module (required)
+    implementation("com.github.meyerjp3.psychometrics:psychometrics-core:master-SNAPSHOT")
+
+    // Optional modules based on your needs:
+    // For Classical Test Theory
+    implementation("com.github.meyerjp3.psychometrics:psychometrics-ctt:master-SNAPSHOT")
+
+    // For Factor Analysis
+    implementation("com.github.meyerjp3.psychometrics:psychometrics-factor:master-SNAPSHOT")
+
+    // For Item Response Theory
+    implementation("com.github.meyerjp3.psychometrics:psychometrics-irt:master-SNAPSHOT")
+
+    // For Item Response Theory
+    implementation("com.github.meyerjp3.psychometrics:psychometrics-fmm:master-SNAPSHOT")
+
+    // For Item Response Theory
+    implementation("com.github.meyerjp3.psychometrics:psychometrics-nirt:master-SNAPSHOT")
+
+    // For Item Response Theory
+    implementation("com.github.meyerjp3.psychometrics:psychometrics-optim:master-SNAPSHOT")
+
+    implementation("org.apache.spark:spark-core_2.13:3.5.3")
+    implementation("org.renjin:renjin-script-engine:3.5-beta76")
+
+    implementation("org.renjin.cran:e1071:1.7-2-b1")
+
+    implementation("org.renjin.cran:seminr:0.7.0-b1")
+    implementation("org.renjin.cran:DiagrammeR:0.8.2-b29")
 }
 
 flutter {

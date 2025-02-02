@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:pls_flutter/home/task_chooser_screen.dart';
 import 'package:pls_flutter/utils.dart';
 
@@ -18,6 +19,9 @@ class SampleData {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  // String _sampleLevel = 'Unknown';
+  static const platform = MethodChannel("hungnguy.pls.flutter.dev/sample");
+  
   final List<SampleData> sampleDataList = [
     SampleData(name: 'Item 1', description: 'Description for Item 1'),
     SampleData(name: 'Item 2', description: 'Description for Item 2'),
@@ -25,6 +29,20 @@ class _MyHomePageState extends State<MyHomePage> {
     SampleData(name: 'Item 4', description: 'Description for Item 4'),
     SampleData(name: 'Item 5', description: 'Description for Item 5'),
   ];
+
+  Future<void> _getSampleChannel() async {
+  String batteryLevel;
+  try {
+    final result = await platform.invokeMethod<String>('getSampleChannel');
+    batteryLevel = 'Sample level at $result % .';
+  } on PlatformException catch (e) {
+    batteryLevel = "Failed to get sample level: '${e.message}'.";
+  }
+
+  setState(() {
+    sampleDataList.add(SampleData(name: 'Sample Level', description: batteryLevel));
+  });
+}
 
   void _incrementCounter() {
     String currentTime = Utils.getCurrentTimeString();
@@ -49,6 +67,8 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
     super.initState();
+
+    _getSampleChannel();
   }
 
   @override
