@@ -8,10 +8,12 @@ The app is designated to work best on tablet devices, while it's also optimised 
 
 ## Authors
 
-Nguyen Van Hung
-Nguyen Hai Duong
-under the context of the subject in VGU
-Dinh Hai Dung
+We are a group of student from Vietnamese-German University in Ho Chi Minh City, Vietnam, in a joint Master study programme with Heilbronn University, Germany:
+ - Van Hung NGUYEN, email: 20223013@student.vgu.vn
+ - Hai Duong NGUYEN, email: 20223008@student.vgu.vn
+
+This project is a module of the subject Management Science which is 
+taught by Dr. Hai Dung DINH, Lecturer cum Academic Coordinator in Vietnamese-German University.
 
 ## Want to test?
 
