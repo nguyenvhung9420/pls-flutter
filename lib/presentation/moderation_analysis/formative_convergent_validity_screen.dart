@@ -88,13 +88,13 @@ class _FormativeConvergentValidityScreenState extends BaseState<FormativeConverg
           moderator: null,
         ),
         name: 'Untitled'));
+    redundancyModelIndexInEditing = redundancyModels.length - 1;
     setState(() {});
   }
 
   Future<void> _addAllRedundancySummaryPaths() async {
     if (accessToken == null) return;
     enableLoading();
-    redundancyModels = [];
     redundancyModels.forEach((RedundancyModel element) async {
       await _addRedundancySummaryPaths(redundancyModel: element);
     });
@@ -162,7 +162,7 @@ class _FormativeConvergentValidityScreenState extends BaseState<FormativeConverg
                   makeSectionTitle("Redundancy Models"),
                   Spacer(),
                   ElevatedButton(
-                    onPressed: () async {
+                    onPressed: () {
                       _addRedundancyModel();
                       openEndDrawer();
                     },
@@ -446,7 +446,8 @@ class _FormativeConvergentValidityScreenState extends BaseState<FormativeConverg
                           ),
                         ),
                         ThemeConstant.sizedBox16,
-                        Row(
+                        Column(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
                             TextButton.icon(
                               label: Text("Cancel"),
@@ -455,7 +456,16 @@ class _FormativeConvergentValidityScreenState extends BaseState<FormativeConverg
                                 closeEndDrawer();
                               },
                             ),
-                            Spacer(),
+                            TextButton.icon(
+                              label: Text("Delete"),
+                              icon: Icon(Icons.delete_outlined),
+                              onPressed: () {
+                                redundancyModels.removeAt(redundancyModelIndexInEditing!);
+                                redundancyModelIndexInEditing = null;
+                                setState(() {});
+                                closeEndDrawer();
+                              },
+                            ),
                             TextButton.icon(
                               label: Text("Save"),
                               icon: Icon(Icons.check),

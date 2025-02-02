@@ -288,7 +288,7 @@ class _FileChooserScreenState extends BaseState<FileChooserScreen> {
                   ThemeConstant.sizedBox16,
                   makeSection([
                     Row(children: [
-                      Expanded(child: Text("Measurement model")),
+                      Expanded(child: makeSectionTitle("Measurement model")),
                       IconButton(
                           onPressed: () {
                             composites.add(Composite(
@@ -308,7 +308,7 @@ class _FileChooserScreenState extends BaseState<FileChooserScreen> {
                           },
                           icon: Icon(Icons.add)),
                     ]),
-                    paths.isEmpty
+                    composites.isEmpty
                         ? Padding(
                             padding: ThemeConstant.padding16(),
                             child: Text("Press + button to add a construct", textAlign: TextAlign.center))
@@ -317,7 +317,7 @@ class _FileChooserScreenState extends BaseState<FileChooserScreen> {
                   ThemeConstant.sizedBox16,
                   makeSection([
                     Row(children: [
-                      Expanded(child: Text("Structural model")),
+                      Expanded(child: makeSectionTitle("Structural model")),
                       IconButton(
                           onPressed: () {
                             paths.add(RelationshipPath(from: [], to: []));

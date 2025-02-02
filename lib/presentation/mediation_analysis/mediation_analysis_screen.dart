@@ -57,6 +57,9 @@ class _MediationAnalysisScreenState extends BaseState<MediationAnalysisScreen> {
   List<Map<String, String>> mediationGeneral = [];
   List<SpecificEffectSignificance?> mediationPerSignificance = [];
 
+  String dataNotAvailable =
+      "Data not available. Please back to Home and conduct Model Summary and Bootstrap Summary first";
+
   @override
   void initState() {
     super.initState();
@@ -88,19 +91,19 @@ class _MediationAnalysisScreenState extends BaseState<MediationAnalysisScreen> {
 
     toReturn.add({
       "name": "Total Effects",
-      "value": seminrSummary?.totalEffects?.join("\n") ?? "",
+      "value": seminrSummary?.totalEffects?.join("\n") ?? dataNotAvailable,
     });
     toReturn.add({
       "name": "Total Indirect Effects",
-      "value": seminrSummary?.totalIndirectEffects?.join("\n") ?? "",
+      "value": seminrSummary?.totalIndirectEffects?.join("\n") ?? dataNotAvailable,
     });
     toReturn.add({
       "name": "Paths",
-      "value": seminrSummary?.paths?.join("\n") ?? "",
+      "value": seminrSummary?.paths?.join("\n") ?? dataNotAvailable,
     });
     toReturn.add({
       "name": "Bootstrapped Paths",
-      "value": bootstrapSummary?.bootstrappedPaths?.join("\n") ?? "",
+      "value": bootstrapSummary?.bootstrappedPaths?.join("\n") ?? dataNotAvailable,
     });
     setState(() {
       mediationGeneral = toReturn;
@@ -163,6 +166,10 @@ class _MediationAnalysisScreenState extends BaseState<MediationAnalysisScreen> {
             )
           ])));
 
+  bool _isReadyForCalculation({required MediationInput element}) {
+    return element.from.isNotEmpty && element.to.isNotEmpty && element.through.isNotEmpty;
+  }
+
   @override
   Widget build(BuildContext context) {
     return ListView(
@@ -171,7 +178,7 @@ class _MediationAnalysisScreenState extends BaseState<MediationAnalysisScreen> {
         Padding(
           padding: ThemeConstant.padding8(horizontal: false, vertical: true),
           child: Text(
-            "Moderation Analysis",
+            "Mediation Analysis",
             style: TextStyle(fontSize: Theme.of(context).textTheme.titleLarge?.fontSize, fontWeight: FontWeight.bold),
           ),
         ),
@@ -294,9 +301,11 @@ class _MediationAnalysisScreenState extends BaseState<MediationAnalysisScreen> {
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
                           TextButton(
-                              onPressed: () {
-                                _calculate(element: mediationInputs[index]);
-                              },
+                              onPressed: _isReadyForCalculation(element: mediationInputs[index])
+                                  ? () {
+                                      _calculate(element: mediationInputs[index]);
+                                    }
+                                  : null,
                               child: Text("Calculate", style: TextStyle(fontWeight: FontWeight.bold))),
                           SizedBox(width: 24),
                           TextButton(
@@ -389,7 +398,7 @@ class _MediationAnalysisScreenState extends BaseState<MediationAnalysisScreen> {
                           style: TextStyle(fontFamily: GoogleFonts.robotoMono().fontFamily),
                         ),
                         subtitle: Text(
-                          mediationGeneral[index]["value"] ?? "",
+                          mediationGeneral[index]["value"] ?? dataNotAvailable,
                           style: TextStyle(fontFamily: GoogleFonts.robotoMono().fontFamily),
                         ),
                       ),

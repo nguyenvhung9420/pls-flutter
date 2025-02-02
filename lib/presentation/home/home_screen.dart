@@ -462,6 +462,7 @@ class _MyHomePageState extends BaseState<MyHomePage> {
   }
 
   void _saveModelSetup(ConfiguredModel model) async {
+    clearSummaryData();
     setState(() => configuredModel = model);
   }
 
