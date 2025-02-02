@@ -2,41 +2,49 @@
 
 # PLS-SEM Mobile Application POC
 
-A Proof-of-Concept mobile application for running Partial Least Squared Structural Equation Modelling on mobile, using Flutter and tobe deployed on Android and iOS.
+This is a *Proof-of-Concept (POC)* mobile application for running *Partial Least Squares Structural Equation Modeling (PLS-SEM)* on mobile devices. The app project is developed using Flutter, which is designed for deployment on both Android and iOS platforms.
 
-The app is designated to work best on tablet devices, while it's also optimised to adapt phone screen but not with the best UX.
+The app is optimized for *tablet devices* to provide the best user experience (UX). While it can also be used on smartphones, the functionality might be limited.
 
 ## Authors
 
-We are a group of student from Vietnamese-German University in Ho Chi Minh City, Vietnam, in a joint Master study programme with Heilbronn University, Germany:
- - Van Hung NGUYEN, email: 20223013@student.vgu.vn
- - Hai Duong NGUYEN, email: 20223008@student.vgu.vn
+We are a group of students from the **Vietnamese-German University** in Ho Chi Minh City, Vietnam, enrolled in a joint Master's program with **Heilbronn University**, Germany:
+ - **Van Hung NGUYEN**, email: 20223013@student.vgu.vn
+ - **Hai Duong NGUYEN**, email: 20223008@student.vgu.vn
 
-This project is a module of the subject Management Science which is 
-taught by Dr. Hai Dung DINH, Lecturer cum Academic Coordinator in Vietnamese-German University.
+This project was developed as part of the **Management Science** module taught by **Dr. Hai Dung DINH**, Lecturer and Academic Coordinator at the Vietnamese-German University.
 
 ## Want to test?
 
-We appredicate all comments and contributions to our young software to be better. If you want to test our build(s), please do not hesitate to contact us via the above-mentioned emails with any of your emails which are used to access to Google Play Store and iCloud. 
+We highly appreciate all feedback and contributions to enhance our software. If you are interested in testing our build(s), **please contact us using the email addresses provided above**. Please include the email address you use to access the Google Play Store and/or iCloud in your message.
 
-You will receive invitation to test our app via Google Play closed test track and TestFlight internal testing.
+You will therefore receive an invitation to participate in our closed testing program via *Google Play Testtrack* and/or *TestFlight*.
 
 
 ## Brief Description
 
-The entire project practically follows the tasks of PLS-SEM that can be found here in this document:
+This project practically implements the tasks of **Partial Least Squares Structural Equation Modeling (PLS-SEM)** as outlined [here](https://sem-in-r.github.io/seminr/#1_Introduction).
 
-This app serves as a front-end to implement a bundle of backend APIs which are made from R code. The Back-end provides the neccessary functions to for calulation and return the results to the app.  The source code of backend can be acccess here:
+This mobile application serves as a front-end for a set of backend APIs developed using R code. The backend provides the necessary functions for calculation and returns the results to the app. The source code for the backend can be accessed at this link.
 
-The main user flow on the mobile app is: user input a dataset (in CSV format from device's memory), measurement model and structural model. Then the trinity of these data will be used in all other tasks of the PLS SEM analysis technique. The tasks that can be conducted in the app are listed in the next section.
+### User Workflow
 
-Most of the tasks of PLS-SEM will be automatically calculated based on the inputed dataset and measurement and structual model. Some other tasks require users to have more input, for example: convergent validity analysis for formative model, moderation analysis, mediation analysis and predictive model comparison.
+The primary user flow involves:
 
+1. **Data Input**: Users input a dataset in CSV format from their device's memory.
+2. **Model Specification**: Users define the measurement model and structural model.
+3. **Analysis Execution**: The app utilizes the input data and models to perform various PLS-SEM tasks.
+
+### Core Functionality
+
+The app automates most PLS-SEM tasks based on the provided data and model specifications. 
+
+Certain tasks, such as convergent validity analysis for formative models, moderation analysis, mediation analysis, and predictive model comparison, may however require additional user inputs.
 
 
 ## Status 
 
-Based on the document mentioned above, the PLS-SEM processes that are supported in the app:
+Based on the document mentioned above, the PLS-SEM processes that are supported in the app include:
 
 
 ### Chapter 3: Model set up
@@ -73,7 +81,7 @@ Based on the document mentioned above, the PLS-SEM processes that are supported 
 
 ### Chapter 8: Moderation analysis
 
-## Indicators that can be presented by the app: 
+## Indicators that can be computed and presented by the app: 
 
 - `iterations` 
 - `paths`
@@ -97,27 +105,30 @@ Based on the document mentioned above, the PLS-SEM processes that are supported 
 
 ## Instructions
 
-### Dataset upload
- 
-1. After opening the app, press on the button "Add Dataset" on home screen. 
-2. You need to define whether your dataset (CSV) has delimiter as comma (,) or semicolon (;)
-3. Press on button Upload File to select a file from your storage to feed into the app.
+### Dataset Upload
 
-The app will notify you on how many rows and columns retrieved from your dataset. You can also preview the first ten rows of the dataset.
+1. **Open the app** and tap the *"Add Dataset"* button on the home screen.
+2. **Specify the delimiter**: Choose whether your CSV dataset uses a *comma (,)* or *semicolon (;)* as the delimiter.
+3. **Select and upload**: Tap the *"Upload File"* button to select and upload your CSV file from your device's storage.
+
+The app will then display the number of rows and columns detected in your dataset. You can also preview the first ten rows of the data to verify the upload.
 
 ### Prepare Measurement and Structural models
 
-If you are using the dataset "Corporate reputation data.csv" from the document, the app was automated to add Measurement and Structural models for your convenience.
+> [!TIP]
+> If you are using the provided "Corporate Reputation Data.csv" dataset, the app automatically suggests initial Measurement and Structural models for your convenience.
 
-1. Scroll down on the Data Import screen until you see Measurement model section.
-2. Press on + button to start adding a new composite.
-3. A right drawer appears and allows you to edit the composite. (Please strongly rely on this document know how to make and understand a 'composite').
-4. Press on Save button to save the composite. It should also appear in the list under Measurement model section
-5. If you want to delete a composite, press on it again and you will find Delete button at the bottom of the drawer
+1. Navigate to the Measurement Model: Scroll down to the Measurement Model section on the Data Import screen.
+Add a Composite: Tap the "+" button to create a new composite.
+Edit Composite: A drawer will appear on the right side of the screen, allowing you to edit the composite details. Please refer to [link to document] for detailed information on creating and understanding composites.
+Save Composite: Tap "Save" to save the edited composite. The saved composite will appear in the list under the Measurement Model section.
+Delete Composite: To delete a composite, tap on it again, and the "Delete" button will appear at the bottom of the drawer.
 
-Do the same set up steps for Structural model.
+Repeat these steps to define the Structural Model.
 
-You can decide to use 'path weighting' to estimate the PLS model. For more details, see here.
+Path Weighting:
+
+You can choose to use "path weighting" to estimate the PLS model. For more information on path weighting, please refer to [link to document].
 
 ### Save the Measurement and Structural models
 
