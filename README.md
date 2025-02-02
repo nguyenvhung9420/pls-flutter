@@ -116,59 +116,66 @@ The app will then display the number of rows and columns detected in your datase
 ### Prepare Measurement and Structural models
 
 > [!TIP]
-> If you are using the provided "Corporate Reputation Data.csv" dataset, the app automatically suggests initial Measurement and Structural models for your convenience.
+>
+> If you are using the provided *"Corporate Reputation Data.csv"* dataset, the app automatically suggests initial Measurement and Structural models for your convenience.
 
-1. Navigate to the Measurement Model: Scroll down to the Measurement Model section on the Data Import screen.
-Add a Composite: Tap the "+" button to create a new composite.
-Edit Composite: A drawer will appear on the right side of the screen, allowing you to edit the composite details. Please refer to [link to document] for detailed information on creating and understanding composites.
-Save Composite: Tap "Save" to save the edited composite. The saved composite will appear in the list under the Measurement Model section.
-Delete Composite: To delete a composite, tap on it again, and the "Delete" button will appear at the bottom of the drawer.
+1. **Navigate to the Measurement Model**: Scroll down to the Measurement Model section on the Data Import screen.
+2. **Add a Composite**: Tap the "+" button to create a new composite.
+3. **Edit Composite**: A drawer will appear on the right side of the screen, allowing you to edit the composite details. *Please refer to [this link](https://sem-in-r.github.io/seminr/#232_Create_a_measurement_model) for detailed information on creating and understanding composites.*
+4. **Save Composite**: Tap **"Save"** to save the edited composite. The saved composite will appear in the list under the Measurement Model section.
+5. **Delete Composite**: To delete a composite, tap on it again, and the **"Delete"** button will appear at the bottom of the drawer.
 
 Repeat these steps to define the Structural Model.
 
-Path Weighting:
-
-You can choose to use "path weighting" to estimate the PLS model. For more information on path weighting, please refer to [link to document].
+> **Path Weighting:**
+>
+> You can choose to use **"path weighting"** to estimate the PLS model. For more information on path weighting, please refer to [this link](https://sem-in-r.github.io/seminr/#234_Estimating_the_model).
 
 ### Save the Measurement and Structural models
 
-1. Still in the Data Import screen, press on Done button at the top-right corner.
-2. The app will ask you to save the setup by pressing on Save button. Otherwise you can cancel or discard the model setup if you want.
+1. On the **Data Import** screen, tap the **"Done"** button located in the top-right corner.
+2. The app will prompt you to save the current dataset setup. Tap **"Save"** to proceed. Alternatively, you can tap **"Cancel"** or **"Discard"** to cancel the setup and start over.
 
-### Explore other PLS-SEM tasks 
+### Explore PLS-SEM tasks 
 
-Once you have had set up the dataset, measurement and structural models, you are unlocked to explore other tasks of PLS-SEM evaluation.
+Once you have successfully defined your dataset, measurement model, and structural model, you can proceed to explore the various tasks involved in PLS-SEM evaluation as mentioned in **Status** part above.
 
-As mentioned, these tasks are automated as interacting with backend system to generate the results and show them on the app for you.
+These tasks are automated by interacting with a backend system, which performs the necessary calculations and presents the results directly within the app.
 
-Some tasks can take longer time compared to others due to the complexity in the calculation and its data structure.
+Please note that some tasks may take longer to complete than others due to the complexity of the calculations and the underlying data structures.
 
-### Some special tasks needing additional user inputs
+### Special tasks requiring additional user inputs
 
 #### Convergent Validity of Formative Models
 
-You are recommended to reference to this chapter in the document that can be found here.
+> For guidance on **redundancy models**, please refer to this chapter in the document [here](https://sem-in-r.github.io/seminr/#42_Convergent_validity).
 
-You can load the predefined list of redundancy models as in the document by pressing on "Load Predefined".
+> You can load the predefined list of redundancy models as in the document by pressing on **"Load Predefined"**.
 
-1. Press on "+ Add" button to add a Redundancy model.
-2. A Drawer appears and allows you to edit specifications for the new Redundancy model
-3. After you press on Save, the app will call backend API and calculate the results for you.
+1. **Add a Redundancy Model**: Tap the **"+ Add"** button to create a new redundancy model.
+2. **Edit Specifications**: A drawer will appear on the right side of the screen, allowing you to edit the specifications for the new model.
+3. **Calculate Results**: After tapping **"Save"**, the app will automatically call the backend API to perform the necessary calculations.
 
 #### Make and compare Predictive models
 
-1. Press on "Predictive model comparisons" under "Evaluation of structural model" section.
-2. You will see the same UI as in the model setup screen as mentioned in Data Import screen. But the difference is to make multiple Structural Models.
-3. Press on "+ Add more Structural Model" to add a new structural model.
+1. Press on **"Predictive model comparisons"** under "Evaluation of structural model" section.
+2. You will see the same UI as in the model setup screen as mentioned in **Data Import** screen. But the difference in this part is to make *multiple* Structural Models.
+3. Press on **"+ Add more Structural Model"** to add a new structural model.
 4. Compose and add more paths for each structural model as you need.
-5. Press on "Start Compare" to make comparison between each Structural Model.
+5. Press on **"Start Compare"** to make comparison between each Structural Model.
 
 #### Mediation Analysis
 
-You are recommended to reference to this chapter in the document that can be found here.
+> For a detailed explanation of **mediation analysis**, please refer to this chapter in the document [here](https://sem-in-r.github.io/seminr/#6_Mediation_analysis_(Chapter_7)).
 
-1. Press on "Mediation Analysis" under "Mediation Analysis" section.
-2. Press on "+ Add" button to add a specified effect significance to analyze.
-3. Fulfill all infos for "From", "To" and "Through" combo boxes.
-4. After that, press on Calculate. The app should analyze the specified effect significance and show data on the screen after processing.
+To perform a mediation analysis:
+
+1. **Navigate to the "Mediation Analysis"** section and tap the "Mediation Analysis" button.
+2. **Add a Mediation Path**: Tap the "+ Add" button to specify the effect you want to analyze.
+3. **Define the Mediation Path**: Select the "From," "To," and "Through" variables using the respective combo boxes.
+4. **Calculate and View Results**: Tap "Calculate." The app will analyze the specified effect and display the results on the screen after processing.
+
+---
+
+Vietnamese-German University, Ho Chi Minh City, Vietnam, February 2025
 
