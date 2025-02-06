@@ -14,7 +14,51 @@ We are a group of students from the **Vietnamese-German University** in Ho Chi M
 
 This project was developed as part of the **Management Science** module taught by **Dr. Hai Dung DINH**, Lecturer and Academic Coordinator at the Vietnamese-German University.
 
-## Want to test?
+## How to Run
+
+### Running the Project
+
+To run this project locally, follow these steps:
+
+1. **Clone the Repository**:
+    ```bash
+    git clone https://github.com/your-repo/pls_flutter.git
+    cd pls_flutter
+    ```
+
+2. **Install Flutter**:
+    Ensure you have Flutter installed. Follow the instructions [here](https://flutter.dev/docs/get-started/install) to set up Flutter on your machine.
+
+3. **Install Dependencies**:
+    ```bash
+    flutter pub get
+    ```
+
+4. **Ensure Emulator/Simulator is Running**:
+    - For Android:
+        - Open Android Studio.
+        - Go to **AVD Manager** and start an Android Virtual Device (preferably a tablet).
+    - For iOS:
+        - Open Xcode.
+        - Go to **Xcode > Preferences > Components** and ensure you have a simulator installed (preferably an iPad).
+        - Start the iOS Simulator from **Xcode > Open Developer Tool > Simulator**.
+
+5. **Run the App**:
+    - For Android:
+      ```bash
+      flutter run
+      ```
+      > **Note**: If you encounter issues, ensure you have Java SDK 19 installed via Android Studio. Follow the instructions [here](https://developer.android.com/studio).
+
+    - For iOS:
+      ```bash
+      flutter run
+      ```
+      > Running on iOS should work without additional setup if you have Xcode installed.
+
+For more detailed instructions, refer to the [Flutter documentation](https://flutter.dev/docs).
+
+## Want to Test Our Beta Builds?
 
 We highly appreciate all feedback and contributions to enhance our software. If you are interested in testing our build(s), **please contact us using the email addresses provided above**. Please include the email address you use to access the Google Play Store and/or iCloud in your message.
 
