@@ -14,6 +14,12 @@ We are a group of students from the **Vietnamese-German University** in Ho Chi M
 
 This project was developed as part of the **Management Science** module taught by **Dr. Hai Dung DINH**, Lecturer and Academic Coordinator at the Vietnamese-German University.
 
+## Is this just the Front-end project?
+
+Yes, this repository is an mobile application that is backed by a Back-end bundle of APIs. The Back-end serves for prodiving REST APIs end points to run the functionalities in the mobile app.
+
+The Back-end project can be found [here](https://github.com/nguyenvhung9420/serverless_gcp_r_seminr).
+
 ## How to Run
 
 ### Running the Project
